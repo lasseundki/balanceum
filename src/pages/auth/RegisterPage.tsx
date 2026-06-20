@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const { register } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState('')
@@ -13,7 +15,7 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 6) { setError('Passwort muss mindestens 6 Zeichen haben.'); return }
+    if (password.length < 6) { setError(t('auth.passwordTooShort')); return }
     setError('')
     setLoading(true)
     try {
@@ -22,9 +24,9 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : ''
       if (msg.includes('email-already-in-use')) {
-        setError('Diese E-Mail ist bereits registriert.')
+        setError(t('auth.emailInUse'))
       } else {
-        setError('Registrierung fehlgeschlagen. Bitte erneut versuchen.')
+        setError(t('auth.registerFailed'))
       }
     } finally {
       setLoading(false)
@@ -39,11 +41,11 @@ export default function RegisterPage() {
             <span className="font-heading text-2xl font-bold text-text-inverse">B</span>
           </div>
           <h1 className="font-heading text-3xl font-bold text-text">Balanceum</h1>
-          <p className="text-text-secondary text-sm mt-1 font-heading italic">Dein persönlicher Finanztracker</p>
+          <p className="text-text-secondary text-sm mt-1 font-heading italic">{t('auth.tagline')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-xl p-6 shadow-md space-y-4">
-          <h2 className="font-heading text-xl font-semibold text-text">Konto erstellen</h2>
+          <h2 className="font-heading text-xl font-semibold text-text">{t('auth.registerTitle')}</h2>
 
           {error && (
             <div className="bg-error-light text-error text-sm px-3 py-2 rounded-md">
@@ -52,7 +54,7 @@ export default function RegisterPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Name</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('common.name')}</label>
             <input
               type="text"
               value={name}
@@ -64,25 +66,25 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">E-Mail</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('auth.email')}</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              placeholder="name@beispiel.de"
+              placeholder="name@example.com"
               className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Passwort</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('auth.password')}</label>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              placeholder="Mindestens 6 Zeichen"
+              placeholder={t('auth.passwordHint')}
               className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
             />
           </div>
@@ -92,14 +94,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-accent text-text-inverse py-2.5 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
-            {loading ? 'Registrieren...' : 'Konto erstellen'}
+            {loading ? t('auth.registering') : t('auth.register')}
           </button>
         </form>
 
         <p className="text-center text-sm text-text-secondary mt-4">
-          Bereits ein Konto?{' '}
+          {t('auth.hasAccount')}{' '}
           <Link to="/login" className="text-accent font-medium hover:text-accent-hover">
-            Anmelden
+            {t('auth.login')}
           </Link>
         </p>
       </div>

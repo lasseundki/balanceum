@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, Download, LogOut, ChevronRight } from 'lucide-react'
+import { X, Download, LogOut, ChevronRight, Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   useCategories, useCategoryActions,
   useMembers, useMemberActions,
@@ -7,17 +8,26 @@ import {
   usePaymentMethods, useMembers as useAllMembers,
 } from '../hooks/useFirestore'
 import { useAuth } from '../contexts/AuthContext'
+import { useAccessibility } from '../contexts/AccessibilityContext'
 import { exportCSV, exportJSON } from '../lib/export'
 import { fmt } from '../lib/formatters'
 import type { CategoryType, TransactionType, Frequency } from '../types'
 
-type Section = 'main' | 'categories' | 'members' | 'recurring' | 'data'
+type Section = 'main' | 'categories' | 'members' | 'recurring' | 'data' | 'language' | 'accessibility'
 
-const FREQ_LABELS: Record<Frequency, string> = { daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich' }
 const CAT_ICONS = ['🏠','🛒','🚗','💊','🎉','🍽️','👕','📚','✈️','💻','🧹','📋','💼','💰','📈','📌','🎁','🏥','🏋️','🎵','📱','🌿','🐾','🎓','💡']
 
+const LANGUAGES = [
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
+]
+
 export default function Settings() {
+  const { t, i18n } = useTranslation()
   const { user, logout } = useAuth()
+  const { fontSize, setFontSize, highContrast, setHighContrast } = useAccessibility()
   const categories = useCategories()
   const { addCategory, deleteCategory } = useCategoryActions()
   const members = useMembers()
@@ -46,6 +56,12 @@ export default function Settings() {
   const [recFreq, setRecFreq] = useState<Frequency>('monthly')
   const [recStart, setRecStart] = useState(new Date().toISOString().slice(0, 10))
 
+  const FREQ_LABELS: Record<Frequency, string> = {
+    daily: t('settings.frequencies.daily'),
+    weekly: t('settings.frequencies.weekly'),
+    monthly: t('settings.frequencies.monthly'),
+    yearly: t('settings.frequencies.yearly'),
+  }
 
   async function handleAddCat() {
     if (!catName.trim()) return
@@ -71,27 +87,93 @@ export default function Settings() {
     setRecAmount(''); setRecCatId(''); setRecNote('')
   }
 
+  function changeLanguage(code: string) {
+    i18n.changeLanguage(code)
+    localStorage.setItem('balanceum_lang', code)
+  }
+
   if (section !== 'main') {
     return (
       <div className="px-4 pt-4 pb-nav">
         <button onClick={() => setSection('main')} className="flex items-center gap-1.5 text-accent text-sm font-medium mb-4 hover:text-accent-hover">
-          ← Zurück
+          {t('common.back')}
         </button>
 
-        {section === 'categories' && (
+        {section === 'language' && (
           <div className="space-y-4">
-            <h1 className="font-heading text-xl font-bold text-text">Kategorien</h1>
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.language')}</h1>
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              {LANGUAGES.map((lang, i) => (
+                <div key={lang.code}>
+                  {i > 0 && <div className="h-px bg-border" />}
+                  <button
+                    onClick={() => changeLanguage(lang.code)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-bg-subtle transition-colors"
+                  >
+                    <span className="text-2xl">{lang.flag}</span>
+                    <span className="flex-1 text-left text-sm font-medium text-text">{lang.label}</span>
+                    {i18n.language === lang.code && <Check size={18} className="text-accent" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {section === 'accessibility' && (
+          <div className="space-y-4">
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.accessibility')}</h1>
+
+            {/* Font Size */}
             <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
+              <p className="text-sm font-medium text-text">{t('settings.fontSize')}</p>
               <div className="flex gap-2">
-                {(['expense', 'income', 'both'] as CategoryType[]).map(t => (
-                  <button key={t} onClick={() => setCatType(t)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catType === t ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary'}`}>
-                    {t === 'expense' ? 'Ausgabe' : t === 'income' ? 'Einnahme' : 'Beide'}
+                {(['sm', 'md', 'lg'] as const).map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setFontSize(size)}
+                    className={`flex-1 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      fontSize === size ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+                    }`}
+                  >
+                    {size === 'sm' ? t('settings.fontSm') : size === 'md' ? t('settings.fontMd') : t('settings.fontLg')}
                   </button>
                 ))}
               </div>
-              <input value={catName} onChange={e => setCatName(e.target.value)} placeholder="Name" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+            </div>
+
+            {/* High Contrast */}
+            <div className="bg-surface border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-text">{t('settings.highContrast')}</p>
+                  <p className="text-xs text-text-muted mt-0.5">{t('settings.highContrastDesc')}</p>
+                </div>
+                <button
+                  onClick={() => setHighContrast(!highContrast)}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${highContrast ? 'bg-accent' : 'bg-bg-muted'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${highContrast ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {section === 'categories' && (
+          <div className="space-y-4">
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.categories')}</h1>
+            <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
+              <div className="flex gap-2">
+                {(['expense', 'income', 'both'] as CategoryType[]).map(ct => (
+                  <button key={ct} onClick={() => setCatType(ct)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catType === ct ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary'}`}>
+                    {ct === 'expense' ? t('settings.catType.expense') : ct === 'income' ? t('settings.catType.income') : t('settings.catType.both')}
+                  </button>
+                ))}
+              </div>
+              <input value={catName} onChange={e => setCatName(e.target.value)} placeholder={t('common.name')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
               <div>
-                <p className="text-xs text-text-muted mb-2">Icon auswählen</p>
+                <p className="text-xs text-text-muted mb-2">{t('settings.selectIcon')}</p>
                 <div className="flex flex-wrap gap-2">
                   {CAT_ICONS.map(ic => (
                     <button key={ic} onClick={() => setCatIcon(ic)} className={`text-xl p-1.5 rounded-md ${catIcon === ic ? 'bg-accent-light ring-2 ring-accent' : 'hover:bg-bg-muted'}`}>{ic}</button>
@@ -99,7 +181,7 @@ export default function Settings() {
                 </div>
               </div>
               <button onClick={handleAddCat} disabled={!catName.trim()} className="w-full bg-accent text-text-inverse py-2.5 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40">
-                Hinzufügen
+                {t('common.add')}
               </button>
             </div>
             <div className="space-y-2">
@@ -107,7 +189,7 @@ export default function Settings() {
                 <div key={cat.id} className="flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-3">
                   <span className="text-xl">{cat.icon}</span>
                   <span className="flex-1 text-sm font-medium text-text">{cat.name}</span>
-                  <span className="text-xs text-text-muted">{cat.type === 'expense' ? 'Ausgabe' : cat.type === 'income' ? 'Einnahme' : 'Beide'}</span>
+                  <span className="text-xs text-text-muted">{cat.type === 'expense' ? t('settings.catType.expense') : cat.type === 'income' ? t('settings.catType.income') : t('settings.catType.both')}</span>
                   <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-text-muted hover:text-error hover:bg-error-light rounded-md transition-colors"><X size={15} /></button>
                 </div>
               ))}
@@ -117,12 +199,12 @@ export default function Settings() {
 
         {section === 'members' && (
           <div className="space-y-4">
-            <h1 className="font-heading text-xl font-bold text-text">Familienmitglieder</h1>
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.members')}</h1>
             <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
-              <input value={memName} onChange={e => setMemName(e.target.value)} placeholder="Name" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
-              <input value={memRelation} onChange={e => setMemRelation(e.target.value)} placeholder="Beziehung (z.B. Partner)" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              <input value={memName} onChange={e => setMemName(e.target.value)} placeholder={t('common.name')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              <input value={memRelation} onChange={e => setMemRelation(e.target.value)} placeholder={t('settings.relation')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
               <button onClick={handleAddMember} disabled={!memName.trim()} className="w-full bg-accent text-text-inverse py-2.5 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40">
-                Hinzufügen
+                {t('common.add')}
               </button>
             </div>
             <div className="space-y-2">
@@ -144,18 +226,18 @@ export default function Settings() {
 
         {section === 'recurring' && (
           <div className="space-y-4">
-            <h1 className="font-heading text-xl font-bold text-text">Wiederkehrend</h1>
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.recurring')}</h1>
             <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
               <div className="flex gap-2">
-                {(['expense', 'income'] as TransactionType[]).map(t => (
-                  <button key={t} onClick={() => setRecType(t)} className={`flex-1 py-2 rounded-md text-sm font-medium border transition-colors ${recType === t ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary'}`}>
-                    {t === 'expense' ? 'Ausgabe' : 'Einnahme'}
+                {(['expense', 'income'] as TransactionType[]).map(rt => (
+                  <button key={rt} onClick={() => setRecType(rt)} className={`flex-1 py-2 rounded-md text-sm font-medium border transition-colors ${recType === rt ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary'}`}>
+                    {rt === 'expense' ? t('transaction.expense') : t('transaction.income')}
                   </button>
                 ))}
               </div>
-              <input type="number" value={recAmount} onChange={e => setRecAmount(e.target.value)} placeholder="Betrag" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              <input type="number" value={recAmount} onChange={e => setRecAmount(e.target.value)} placeholder={t('common.amount')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
               <select value={recCatId} onChange={e => setRecCatId(e.target.value)} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light">
-                <option value="">Kategorie wählen...</option>
+                <option value="">{t('settings.selectCategory')}</option>
                 {categories.filter(c => c.type === recType || c.type === 'both').map(c => (
                   <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                 ))}
@@ -163,10 +245,13 @@ export default function Settings() {
               <select value={recFreq} onChange={e => setRecFreq(e.target.value as Frequency)} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light">
                 {(Object.entries(FREQ_LABELS) as [Frequency, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
-              <input type="date" value={recStart} onChange={e => setRecStart(e.target.value)} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
-              <input value={recNote} onChange={e => setRecNote(e.target.value)} placeholder="Notiz (optional)" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              <div>
+                <label className="block text-xs text-text-muted mb-1.5">{t('settings.startDate')}</label>
+                <input type="date" value={recStart} onChange={e => setRecStart(e.target.value)} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              </div>
+              <input value={recNote} onChange={e => setRecNote(e.target.value)} placeholder={t('transaction.notePlaceholder')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
               <button onClick={handleAddRecurring} disabled={!recAmount || !recCatId} className="w-full bg-accent text-text-inverse py-2.5 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40">
-                Hinzufügen
+                {t('common.add')}
               </button>
             </div>
             <div className="space-y-2">
@@ -176,7 +261,7 @@ export default function Settings() {
                   <div key={r.id} className="flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-3">
                     <span className="text-xl">{cat?.icon ?? '📌'}</span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-text">{r.note || cat?.name || 'Buchung'}</p>
+                      <p className="text-sm font-medium text-text">{r.note || cat?.name || t('transaction.unknown')}</p>
                       <p className="text-xs text-text-muted">{FREQ_LABELS[r.frequency]} · {r.type === 'expense' ? '−' : '+'}{fmt(r.amount)}</p>
                     </div>
                     <button onClick={() => deleteRecurring(r.id)} className="p-1.5 text-text-muted hover:text-error hover:bg-error-light rounded-md transition-colors"><X size={15} /></button>
@@ -189,27 +274,27 @@ export default function Settings() {
 
         {section === 'data' && (
           <div className="space-y-4">
-            <h1 className="font-heading text-xl font-bold text-text">Daten & Backup</h1>
+            <h1 className="font-heading text-xl font-bold text-text">{t('settings.data')}</h1>
             <div className="bg-surface border border-border rounded-xl overflow-hidden">
               <button onClick={() => exportCSV(user!.uid, categories, paymentMethods, allMembers)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-bg-subtle transition-colors">
                 <Download size={18} className="text-accent" />
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-text">CSV exportieren</p>
-                  <p className="text-xs text-text-muted">Für Excel / Google Sheets</p>
+                  <p className="text-sm font-medium text-text">{t('settings.csvExport')}</p>
+                  <p className="text-xs text-text-muted">{t('settings.csvExportDesc')}</p>
                 </div>
               </button>
               <div className="h-px bg-border" />
               <button onClick={() => exportJSON(user!.uid)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-bg-subtle transition-colors">
                 <Download size={18} className="text-info" />
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-text">JSON-Backup exportieren</p>
-                  <p className="text-xs text-text-muted">Vollständige Datensicherung</p>
+                  <p className="text-sm font-medium text-text">{t('settings.jsonExport')}</p>
+                  <p className="text-xs text-text-muted">{t('settings.jsonExportDesc')}</p>
                 </div>
               </button>
             </div>
 
             <div className="bg-warning-light border border-warning rounded-xl p-4 text-xs text-text-secondary">
-              ℹ️ Da deine Daten nun in der Firebase-Cloud gespeichert sind, sind sie automatisch auf all deinen Geräten verfügbar. Backups sind dennoch empfohlen.
+              ℹ️ {t('settings.cloudNote')}
             </div>
           </div>
         )}
@@ -219,7 +304,7 @@ export default function Settings() {
 
   return (
     <div className="px-4 pt-4 pb-nav">
-      <h1 className="font-heading text-2xl font-bold text-text mb-4">Einstellungen</h1>
+      <h1 className="font-heading text-2xl font-bold text-text mb-4">{t('settings.title')}</h1>
 
       {/* User card */}
       <div className="bg-surface border border-border rounded-xl p-4 mb-4 flex items-center gap-3">
@@ -235,10 +320,12 @@ export default function Settings() {
       {/* Menu */}
       <div className="bg-surface border border-border rounded-xl overflow-hidden mb-4">
         {([
-          { key: 'categories', label: 'Kategorien', sub: `${categories.length} gesamt` },
-          { key: 'members', label: 'Familienmitglieder', sub: `${members.length} Personen` },
-          { key: 'recurring', label: 'Wiederkehrende Buchungen', sub: `${recurring.length} aktiv` },
-          { key: 'data', label: 'Daten & Backup', sub: 'Export · Import' },
+          { key: 'categories', label: t('settings.categories'), sub: t('settings.categoriesDesc', { count: categories.length }) },
+          { key: 'members', label: t('settings.members'), sub: t('settings.membersDesc', { count: members.length }) },
+          { key: 'recurring', label: t('settings.recurring'), sub: t('settings.recurringDesc', { count: recurring.length }) },
+          { key: 'data', label: t('settings.data'), sub: t('settings.dataDesc') },
+          { key: 'language', label: t('settings.language'), sub: LANGUAGES.find(l => l.code === i18n.language)?.label ?? '' },
+          { key: 'accessibility', label: t('settings.accessibility'), sub: `${t(`settings.font${fontSize.charAt(0).toUpperCase() + fontSize.slice(1)}` as 'settings.fontSm')}${highContrast ? ' · HC' : ''}` },
         ] as { key: Section; label: string; sub: string }[]).map(({ key, label, sub }, i) => (
           <div key={key}>
             {i > 0 && <div className="h-px bg-border" />}
@@ -256,7 +343,7 @@ export default function Settings() {
       {/* Logout */}
       <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 border border-error rounded-xl text-error text-sm font-medium hover:bg-error-light transition-colors">
         <LogOut size={16} />
-        Abmelden
+        {t('settings.logout')}
       </button>
     </div>
   )

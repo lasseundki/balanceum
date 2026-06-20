@@ -1,0 +1,75 @@
+{
+  "nav": { "home": "Home", "list": "List", "analytics": "Analytics", "settings": "Settings" },
+  "common": {
+    "income": "Income", "expense": "Expenses", "balance": "Balance",
+    "save": "Save", "saving": "Saving...", "add": "Add",
+    "cancel": "Cancel", "back": "← Back", "all": "All",
+    "loading": "Loading...", "amount": "Amount", "date": "Date",
+    "note": "Note", "category": "Category", "name": "Name", "none": "None"
+  },
+  "dashboard": {
+    "welcomeBack": "Welcome back", "topExpenses": "Top Expenses",
+    "recentBookings": "Recent Transactions", "noBookings": "No transactions yet",
+    "startHint": "Tap + to get started",
+    "extraordinaryAlert": "Extraordinary Expenses",
+    "extraordinaryMonth": "{{amount}} this month"
+  },
+  "transaction": {
+    "title": "Transaction", "expense": "Expense", "income": "Income",
+    "paymentMethod": "Payment Method", "forWhom": "For whom",
+    "extraordinary": "Extraordinary", "gift": "Gift",
+    "notePlaceholder": "Short description...", "none": "None",
+    "noBookings": "No transactions found",
+    "search": "Search...", "unknown": "Transaction"
+  },
+  "analytics": {
+    "monthlyOverview": "Monthly Overview", "clickHint": "Tap a month for details",
+    "reset": "Reset", "byCategory": "Expenses by Category",
+    "total": "Total", "outlier": "Outlier detected",
+    "outlierDesc": "{{months}} over 150% of monthly average",
+    "extraordinary": "⚡ Extraordinary Expenses"
+  },
+  "cards": {
+    "title": "Payment Methods", "thisMonth": "This month", "noCards": "No payment methods yet",
+    "addTitle": "Add Payment Method", "type": "Type", "color": "Color",
+    "billingDay": "Billing day (optional)", "billingDayPlaceholder": "e.g. 15",
+    "billingInfo": "Billing on the {{day}}th.",
+    "types": { "card": "Card", "cash": "Cash", "transfer": "Transfer", "other": "Other" }
+  },
+  "settings": {
+    "title": "Settings", "logout": "Sign out",
+    "categories": "Categories", "categoriesDesc": "{{count}} total",
+    "members": "Family Members", "membersDesc": "{{count}} people",
+    "recurring": "Recurring Transactions", "recurringDesc": "{{count}} active",
+    "data": "Data & Backup", "dataDesc": "Export · Import",
+    "language": "Language", "accessibility": "Accessibility",
+    "fontSize": "Font Size", "fontSm": "Small", "fontMd": "Normal", "fontLg": "Large",
+    "highContrast": "High Contrast", "highContrastDesc": "Stronger color contrast for better readability",
+    "catType": { "expense": "Expense", "income": "Income", "both": "Both" },
+    "selectIcon": "Select icon", "relation": "Relationship (e.g. Partner)",
+    "selectCategory": "Choose category...", "startDate": "Start date",
+    "frequencies": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "yearly": "Yearly" },
+    "csvExport": "Export CSV", "csvExportDesc": "For Excel / Google Sheets",
+    "jsonExport": "Export JSON Backup", "jsonExportDesc": "Full data backup",
+    "cloudNote": "Your data is stored in Firebase and available on all your devices. Backups are still recommended."
+  },
+  "auth": {
+    "tagline": "Your personal finance tracker",
+    "loginTitle": "Sign in", "registerTitle": "Create account",
+    "forgotTitle": "Reset password",
+    "forgotDesc": "Enter your email address. We'll send you a reset link.",
+    "email": "Email", "password": "Password", "passwordHint": "At least 6 characters",
+    "login": "Sign in", "loggingIn": "Signing in...",
+    "register": "Create account", "registering": "Creating account...",
+    "sendReset": "Send reset link", "sending": "Sending...",
+    "noAccount": "No account yet?", "hasAccount": "Already have an account?",
+    "forgotPassword": "Forgot password?", "backToLogin": "Back to login",
+    "emailSent": "Email sent",
+    "emailSentDesc": "We've sent a reset link to {{email}}. Also check your spam folder.",
+    "wrongCredentials": "Incorrect email or password.",
+    "emailInUse": "This email is already registered.",
+    "registerFailed": "Registration failed. Please try again.",
+    "emailNotFound": "Email address not found.",
+    "passwordTooShort": "Password must be at least 6 characters."
+  }
+}

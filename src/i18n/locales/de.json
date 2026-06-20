@@ -1,0 +1,75 @@
+{
+  "nav": { "home": "Start", "list": "Liste", "analytics": "Analyse", "settings": "Einst." },
+  "common": {
+    "income": "Einnahmen", "expense": "Ausgaben", "balance": "Saldo",
+    "save": "Speichern", "saving": "Speichern...", "add": "Hinzufügen",
+    "cancel": "Abbrechen", "back": "← Zurück", "all": "Alle",
+    "loading": "Laden...", "amount": "Betrag", "date": "Datum",
+    "note": "Notiz", "category": "Kategorie", "name": "Name", "none": "Keine"
+  },
+  "dashboard": {
+    "welcomeBack": "Willkommen zurück", "topExpenses": "Top Ausgaben",
+    "recentBookings": "Letzte Buchungen", "noBookings": "Noch keine Buchungen",
+    "startHint": "Tippe auf + um zu starten",
+    "extraordinaryAlert": "Außergewöhnliche Ausgaben",
+    "extraordinaryMonth": "{{amount}} diesen Monat"
+  },
+  "transaction": {
+    "title": "Transaktion", "expense": "Ausgabe", "income": "Einnahme",
+    "paymentMethod": "Zahlungsmethode", "forWhom": "Für wen",
+    "extraordinary": "Außergewöhnlich", "gift": "Geschenk",
+    "notePlaceholder": "Kurze Beschreibung...", "none": "Keine",
+    "noBookings": "Keine Transaktionen gefunden",
+    "search": "Suchen...", "unknown": "Buchung"
+  },
+  "analytics": {
+    "monthlyOverview": "Monatsübersicht", "clickHint": "Tippe auf einen Monat für Details",
+    "reset": "Zurücksetzen", "byCategory": "Ausgaben nach Kategorie",
+    "total": "Gesamt", "outlier": "Ausreißer erkannt",
+    "outlierDesc": "{{months}} über 150% des Monatsdurchschnitts",
+    "extraordinary": "⚡ Außergewöhnliche Ausgaben"
+  },
+  "cards": {
+    "title": "Zahlungsmittel", "thisMonth": "Diesen Monat", "noCards": "Noch keine Zahlungsmittel",
+    "addTitle": "Zahlungsmittel hinzufügen", "type": "Typ", "color": "Farbe",
+    "billingDay": "Abrechnungstag (optional)", "billingDayPlaceholder": "z.B. 15",
+    "billingInfo": "Abrechnung am {{day}}.",
+    "types": { "card": "Karte", "cash": "Bar", "transfer": "Überweisung", "other": "Sonstiges" }
+  },
+  "settings": {
+    "title": "Einstellungen", "logout": "Abmelden",
+    "categories": "Kategorien", "categoriesDesc": "{{count}} gesamt",
+    "members": "Familienmitglieder", "membersDesc": "{{count}} Personen",
+    "recurring": "Wiederkehrende Buchungen", "recurringDesc": "{{count}} aktiv",
+    "data": "Daten & Backup", "dataDesc": "Export · Import",
+    "language": "Sprache", "accessibility": "Barrierefreiheit",
+    "fontSize": "Schriftgröße", "fontSm": "Klein", "fontMd": "Normal", "fontLg": "Groß",
+    "highContrast": "Hoher Kontrast", "highContrastDesc": "Stärkere Kontraste für bessere Lesbarkeit",
+    "catType": { "expense": "Ausgabe", "income": "Einnahme", "both": "Beide" },
+    "selectIcon": "Icon auswählen", "relation": "Beziehung (z.B. Partner)",
+    "selectCategory": "Kategorie wählen...", "startDate": "Startdatum",
+    "frequencies": { "daily": "Täglich", "weekly": "Wöchentlich", "monthly": "Monatlich", "yearly": "Jährlich" },
+    "csvExport": "CSV exportieren", "csvExportDesc": "Für Excel / Google Sheets",
+    "jsonExport": "JSON-Backup exportieren", "jsonExportDesc": "Vollständige Datensicherung",
+    "cloudNote": "Deine Daten sind in der Firebase-Cloud gespeichert und auf allen Geräten verfügbar. Backups werden trotzdem empfohlen."
+  },
+  "auth": {
+    "tagline": "Dein persönlicher Finanztracker",
+    "loginTitle": "Anmelden", "registerTitle": "Konto erstellen",
+    "forgotTitle": "Passwort zurücksetzen",
+    "forgotDesc": "Gib deine E-Mail ein. Wir senden dir einen Reset-Link.",
+    "email": "E-Mail", "password": "Passwort", "passwordHint": "Mindestens 6 Zeichen",
+    "login": "Anmelden", "loggingIn": "Anmelden...",
+    "register": "Konto erstellen", "registering": "Registrieren...",
+    "sendReset": "Reset-Link senden", "sending": "Senden...",
+    "noAccount": "Noch kein Konto?", "hasAccount": "Bereits ein Konto?",
+    "forgotPassword": "Passwort vergessen?", "backToLogin": "Zurück zum Login",
+    "emailSent": "E-Mail gesendet",
+    "emailSentDesc": "Wir haben dir einen Link an {{email}} geschickt. Überprüfe auch deinen Spam-Ordner.",
+    "wrongCredentials": "E-Mail oder Passwort falsch.",
+    "emailInUse": "Diese E-Mail ist bereits registriert.",
+    "registerFailed": "Registrierung fehlgeschlagen. Bitte erneut versuchen.",
+    "emailNotFound": "E-Mail-Adresse nicht gefunden.",
+    "passwordTooShort": "Passwort muss mindestens 6 Zeichen haben."
+  }
+}

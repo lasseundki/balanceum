@@ -1,0 +1,75 @@
+{
+  "nav": { "home": "Inicio", "list": "Lista", "analytics": "Análisis", "settings": "Config." },
+  "common": {
+    "income": "Ingresos", "expense": "Gastos", "balance": "Saldo",
+    "save": "Guardar", "saving": "Guardando...", "add": "Agregar",
+    "cancel": "Cancelar", "back": "← Volver", "all": "Todos",
+    "loading": "Cargando...", "amount": "Monto", "date": "Fecha",
+    "note": "Nota", "category": "Categoría", "name": "Nombre", "none": "Ninguno"
+  },
+  "dashboard": {
+    "welcomeBack": "Bienvenido de nuevo", "topExpenses": "Principales gastos",
+    "recentBookings": "Últimas transacciones", "noBookings": "Aún no hay transacciones",
+    "startHint": "Toca + para comenzar",
+    "extraordinaryAlert": "Gastos extraordinarios",
+    "extraordinaryMonth": "{{amount}} este mes"
+  },
+  "transaction": {
+    "title": "Transacción", "expense": "Gasto", "income": "Ingreso",
+    "paymentMethod": "Método de pago", "forWhom": "Para quién",
+    "extraordinary": "Extraordinario", "gift": "Regalo",
+    "notePlaceholder": "Breve descripción...", "none": "Ninguno",
+    "noBookings": "No se encontraron transacciones",
+    "search": "Buscar...", "unknown": "Transacción"
+  },
+  "analytics": {
+    "monthlyOverview": "Resumen mensual", "clickHint": "Toca un mes para ver detalles",
+    "reset": "Restablecer", "byCategory": "Gastos por categoría",
+    "total": "Total", "outlier": "Valor atípico detectado",
+    "outlierDesc": "{{months}} superan el 150% del promedio mensual",
+    "extraordinary": "⚡ Gastos extraordinarios"
+  },
+  "cards": {
+    "title": "Métodos de pago", "thisMonth": "Este mes", "noCards": "Aún no hay métodos de pago",
+    "addTitle": "Agregar método de pago", "type": "Tipo", "color": "Color",
+    "billingDay": "Día de facturación (opcional)", "billingDayPlaceholder": "ej. 15",
+    "billingInfo": "Facturación el día {{day}}.",
+    "types": { "card": "Tarjeta", "cash": "Efectivo", "transfer": "Transferencia", "other": "Otro" }
+  },
+  "settings": {
+    "title": "Configuración", "logout": "Cerrar sesión",
+    "categories": "Categorías", "categoriesDesc": "{{count}} en total",
+    "members": "Miembros de la familia", "membersDesc": "{{count}} personas",
+    "recurring": "Transacciones recurrentes", "recurringDesc": "{{count}} activas",
+    "data": "Datos y respaldo", "dataDesc": "Exportar · Importar",
+    "language": "Idioma", "accessibility": "Accesibilidad",
+    "fontSize": "Tamaño de letra", "fontSm": "Pequeño", "fontMd": "Normal", "fontLg": "Grande",
+    "highContrast": "Alto contraste", "highContrastDesc": "Contrastes más fuertes para mejor legibilidad",
+    "catType": { "expense": "Gasto", "income": "Ingreso", "both": "Ambos" },
+    "selectIcon": "Seleccionar ícono", "relation": "Relación (ej. Pareja)",
+    "selectCategory": "Elegir categoría...", "startDate": "Fecha de inicio",
+    "frequencies": { "daily": "Diario", "weekly": "Semanal", "monthly": "Mensual", "yearly": "Anual" },
+    "csvExport": "Exportar CSV", "csvExportDesc": "Para Excel / Google Sheets",
+    "jsonExport": "Exportar respaldo JSON", "jsonExportDesc": "Copia de seguridad completa",
+    "cloudNote": "Tus datos están en Firebase y disponibles en todos tus dispositivos. Los respaldos igualmente se recomiendan."
+  },
+  "auth": {
+    "tagline": "Tu rastreador de finanzas personal",
+    "loginTitle": "Iniciar sesión", "registerTitle": "Crear cuenta",
+    "forgotTitle": "Restablecer contraseña",
+    "forgotDesc": "Ingresa tu correo electrónico. Te enviaremos un enlace de restablecimiento.",
+    "email": "Correo electrónico", "password": "Contraseña", "passwordHint": "Mínimo 6 caracteres",
+    "login": "Iniciar sesión", "loggingIn": "Iniciando sesión...",
+    "register": "Crear cuenta", "registering": "Creando cuenta...",
+    "sendReset": "Enviar enlace", "sending": "Enviando...",
+    "noAccount": "¿Aún no tienes cuenta?", "hasAccount": "¿Ya tienes cuenta?",
+    "forgotPassword": "¿Olvidaste tu contraseña?", "backToLogin": "Volver al inicio de sesión",
+    "emailSent": "Correo enviado",
+    "emailSentDesc": "Te enviamos un enlace a {{email}}. Revisa también tu carpeta de spam.",
+    "wrongCredentials": "Correo o contraseña incorrectos.",
+    "emailInUse": "Este correo ya está registrado.",
+    "registerFailed": "Registro fallido. Por favor intenta de nuevo.",
+    "emailNotFound": "Correo electrónico no encontrado.",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres."
+  }
+}

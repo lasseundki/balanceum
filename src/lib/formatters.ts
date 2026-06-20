@@ -1,27 +1,46 @@
 import { format, startOfMonth, endOfMonth } from 'date-fns'
-import { de } from 'date-fns/locale'
+import { de, enUS, es, ptBR } from 'date-fns/locale'
+import i18n from '../i18n'
+
+function dateLocale() {
+  switch (i18n.language) {
+    case 'de': return de
+    case 'es': return es
+    case 'pt': return ptBR
+    default: return enUS
+  }
+}
+
+function intlLocale() {
+  switch (i18n.language) {
+    case 'de': return 'de-DE'
+    case 'es': return 'es-ES'
+    case 'pt': return 'pt-BR'
+    default: return 'en-US'
+  }
+}
 
 export function fmt(amount: number): string {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount)
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'EUR' }).format(amount)
 }
 
 export function fmtShort(amount: number): string {
   if (Math.abs(amount) >= 1000) {
-    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount)
+    return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount)
   }
   return fmt(amount)
 }
 
 export function fmtDate(ts: number): string {
-  return format(new Date(ts), 'dd.MM.yyyy', { locale: de })
+  return format(new Date(ts), 'P', { locale: dateLocale() })
 }
 
 export function fmtDateShort(ts: number): string {
-  return format(new Date(ts), 'dd. MMM', { locale: de })
+  return format(new Date(ts), 'd MMM', { locale: dateLocale() })
 }
 
 export function fmtMonthYear(year: number, month: number): string {
-  return format(new Date(year, month, 1), 'MMMM yyyy', { locale: de })
+  return format(new Date(year, month, 1), 'MMMM yyyy', { locale: dateLocale() })
 }
 
 export function monthRange(year: number, month: number) {

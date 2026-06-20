@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { Plus, X, CreditCard, Banknote, ArrowLeftRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { usePaymentMethods, usePaymentMethodActions, useYearTransactions } from '../hooks/useFirestore'
 import { fmt } from '../lib/formatters'
 import type { PaymentType } from '../types'
 
-const TYPE_LABELS: Record<PaymentType, string> = {
-  card: 'Karte', cash: 'Bar', transfer: 'Überweisung', other: 'Sonstiges',
-}
 const TYPE_ICONS: Record<PaymentType, typeof CreditCard> = {
   card: CreditCard, cash: Banknote, transfer: ArrowLeftRight, other: CreditCard,
 }
 const COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4', '#6E6860']
 
 export default function Cards() {
+  const { t } = useTranslation()
   const methods = usePaymentMethods()
   const { addPaymentMethod, deletePaymentMethod } = usePaymentMethodActions()
   const now = new Date()
@@ -28,8 +27,8 @@ export default function Cards() {
   function monthTotal(methodId: string) {
     const m = now.getMonth()
     return transactions
-      .filter(t => t.paymentMethodId === methodId && new Date(t.date).getMonth() === m && t.type === 'expense')
-      .reduce((s, t) => s + t.amount, 0)
+      .filter(tx => tx.paymentMethodId === methodId && new Date(tx.date).getMonth() === m && tx.type === 'expense')
+      .reduce((s, tx) => s + tx.amount, 0)
   }
 
   async function handleAdd() {
@@ -49,9 +48,9 @@ export default function Cards() {
   return (
     <div className="px-4 pt-4 pb-nav">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="font-heading text-2xl font-bold text-text">Zahlungsmittel</h1>
+        <h1 className="font-heading text-2xl font-bold text-text">{t('cards.title')}</h1>
         <button onClick={() => setShowAdd(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-text-inverse rounded-md text-sm font-medium hover:bg-accent-hover transition-colors">
-          <Plus size={16} />Hinzufügen
+          <Plus size={16} />{t('common.add')}
         </button>
       </div>
 
@@ -69,12 +68,12 @@ export default function Cards() {
                 <div className="flex-1">
                   <p className="font-medium text-text">{pm.name}</p>
                   <p className="text-xs text-text-muted">
-                    {TYPE_LABELS[pm.type]}
-                    {pm.billingDay ? ` · Abrechnung am ${pm.billingDay}.` : ''}
+                    {t(`cards.types.${pm.type}`)}
+                    {pm.billingDay ? ` · ${t('cards.billingInfo', { day: pm.billingDay })}` : ''}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-text-muted mb-0.5">Diesen Monat</p>
+                  <p className="text-xs text-text-muted mb-0.5">{t('cards.thisMonth')}</p>
                   <p className="font-semibold text-error">{total > 0 ? fmt(total) : '–'}</p>
                 </div>
                 <button
@@ -90,7 +89,7 @@ export default function Cards() {
         {methods.length === 0 && (
           <div className="text-center py-12 text-text-muted">
             <CreditCard size={36} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Noch keine Zahlungsmittel</p>
+            <p className="text-sm">{t('cards.noCards')}</p>
           </div>
         )}
       </div>
@@ -101,21 +100,21 @@ export default function Cards() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowAdd(false)} />
           <div className="relative w-full bg-surface rounded-t-xl p-5 space-y-4 shadow-xl">
             <div className="flex justify-between items-center">
-              <h2 className="font-heading text-lg font-semibold text-text">Zahlungsmittel hinzufügen</h2>
+              <h2 className="font-heading text-lg font-semibold text-text">{t('cards.addTitle')}</h2>
               <button onClick={() => setShowAdd(false)} className="p-1 text-text-muted"><X size={20} /></button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text mb-1.5">Name</label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Visa" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+              <label className="block text-sm font-medium text-text mb-1.5">{t('common.name')}</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Visa" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text mb-1.5">Typ</label>
+              <label className="block text-sm font-medium text-text mb-1.5">{t('cards.type')}</label>
               <div className="grid grid-cols-2 gap-2">
-                {(['card', 'cash', 'transfer', 'other'] as PaymentType[]).map(t => (
-                  <button key={t} onClick={() => setType(t)} className={`py-2 rounded-md text-sm font-medium border transition-colors ${type === t ? 'border-accent bg-accent-light text-accent-dark' : 'border-border text-text-secondary hover:bg-bg-subtle'}`}>
-                    {TYPE_LABELS[t]}
+                {(['card', 'cash', 'transfer', 'other'] as PaymentType[]).map(pt => (
+                  <button key={pt} onClick={() => setType(pt)} className={`py-2 rounded-md text-sm font-medium border transition-colors ${type === pt ? 'border-accent bg-accent-light text-accent-dark' : 'border-border text-text-secondary hover:bg-bg-subtle'}`}>
+                    {t(`cards.types.${pt}`)}
                   </button>
                 ))}
               </div>
@@ -123,13 +122,13 @@ export default function Cards() {
 
             {type === 'card' && (
               <div>
-                <label className="block text-sm font-medium text-text mb-1.5">Abrechnungstag (optional)</label>
-                <input type="number" min="1" max="31" value={billingDay} onChange={e => setBillingDay(e.target.value)} placeholder="z.B. 15" className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+                <label className="block text-sm font-medium text-text mb-1.5">{t('cards.billingDay')}</label>
+                <input type="number" min="1" max="31" value={billingDay} onChange={e => setBillingDay(e.target.value)} placeholder={t('cards.billingDayPlaceholder')} className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-text mb-2">Farbe</label>
+              <label className="block text-sm font-medium text-text mb-2">{t('cards.color')}</label>
               <div className="flex gap-2">
                 {COLORS.map(c => (
                   <button key={c} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full transition-transform ${color === c ? 'scale-125 ring-2 ring-offset-2 ring-accent' : ''}`} style={{ background: c }} />
@@ -138,7 +137,7 @@ export default function Cards() {
             </div>
 
             <button onClick={handleAdd} disabled={saving || !name.trim()} className="w-full bg-accent text-text-inverse py-3 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40">
-              {saving ? 'Speichern...' : 'Hinzufügen'}
+              {saving ? t('common.saving') : t('common.add')}
             </button>
           </div>
         </div>

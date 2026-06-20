@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories, useTransactionActions } from '../hooks/useFirestore'
 import { fmt, fmtMonthYear } from '../lib/formatters'
 import { format } from 'date-fns'
-import { de } from 'date-fns/locale'
+import { de, enUS, es, ptBR } from 'date-fns/locale'
 
 export default function Transactions() {
+  const { t, i18n } = useTranslation()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -18,6 +20,8 @@ export default function Transactions() {
   const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all')
   const [deleting, setDeleting] = useState<string | null>(null)
 
+  const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
+
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1)
   }
@@ -28,28 +32,28 @@ export default function Transactions() {
   const catMap = Object.fromEntries(categories.map(c => [c.id, c]))
 
   const filtered = useMemo(() => {
-    return transactions.filter(t => {
-      if (filterType !== 'all' && t.type !== filterType) return false
-      if (filterCatId && t.categoryId !== filterCatId) return false
+    return transactions.filter(tx => {
+      if (filterType !== 'all' && tx.type !== filterType) return false
+      if (filterCatId && tx.categoryId !== filterCatId) return false
       if (search) {
         const q = search.toLowerCase()
-        const catName = catMap[t.categoryId]?.name?.toLowerCase() ?? ''
-        const note = t.note?.toLowerCase() ?? ''
+        const catName = catMap[tx.categoryId]?.name?.toLowerCase() ?? ''
+        const note = tx.note?.toLowerCase() ?? ''
         if (!catName.includes(q) && !note.includes(q)) return false
       }
       return true
     })
   }, [transactions, filterType, filterCatId, search, catMap])
 
-  const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0)
+  const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0)
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof filtered>()
-    for (const t of filtered) {
-      const key = format(new Date(t.date), 'yyyy-MM-dd')
+    for (const tx of filtered) {
+      const key = format(new Date(tx.date), 'yyyy-MM-dd')
       if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(t)
+      map.get(key)!.push(tx)
     }
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a))
   }, [filtered])
@@ -76,9 +80,9 @@ export default function Transactions() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
-          { label: 'Einnahmen', val: income, color: 'text-success' },
-          { label: 'Ausgaben', val: expense, color: 'text-error' },
-          { label: 'Saldo', val: income - expense, color: income - expense >= 0 ? 'text-success' : 'text-error' },
+          { label: t('common.income'), val: income, color: 'text-success' },
+          { label: t('common.expense'), val: expense, color: 'text-error' },
+          { label: t('common.balance'), val: income - expense, color: income - expense >= 0 ? 'text-success' : 'text-error' },
         ].map(({ label, val, color }) => (
           <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center">
             <p className="text-xs text-text-muted mb-0.5">{label}</p>
@@ -93,22 +97,22 @@ export default function Transactions() {
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Suchen..."
+          placeholder={t('transaction.search')}
           className="w-full pl-9 pr-3 py-2.5 text-sm border border-border rounded-md bg-surface text-text focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
         />
       </div>
 
       {/* Type filter */}
       <div className="flex gap-2 mb-3">
-        {(['all', 'expense', 'income'] as const).map(t => (
+        {(['all', 'expense', 'income'] as const).map(type => (
           <button
-            key={t}
-            onClick={() => setFilterType(t)}
+            key={type}
+            onClick={() => setFilterType(type)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterType === t ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+              filterType === type ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
             }`}
           >
-            {t === 'all' ? 'Alle' : t === 'expense' ? 'Ausgaben' : 'Einnahmen'}
+            {type === 'all' ? t('common.all') : type === 'expense' ? t('common.expense') : t('common.income')}
           </button>
         ))}
       </div>
@@ -121,7 +125,7 @@ export default function Transactions() {
             !filterCatId ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
           }`}
         >
-          Alle
+          {t('common.all')}
         </button>
         {categories.map(cat => (
           <button
@@ -138,18 +142,18 @@ export default function Transactions() {
 
       {/* Transactions grouped by date */}
       {loading ? (
-        <div className="text-center py-12 text-text-muted text-sm">Laden...</div>
+        <div className="text-center py-12 text-text-muted text-sm">{t('common.loading')}</div>
       ) : grouped.length === 0 ? (
         <div className="text-center py-12 text-text-muted">
           <p className="text-3xl mb-2">📭</p>
-          <p className="text-sm">Keine Transaktionen gefunden</p>
+          <p className="text-sm">{t('transaction.noBookings')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {grouped.map(([dateKey, txs]) => {
             const d = new Date(dateKey)
-            const dayLabel = format(d, 'EEEE, dd. MMMM', { locale: de })
-            const dayTotal = txs.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0)
+            const dayLabel = format(d, 'EEEE, d MMMM', { locale: dateLocale })
+            const dayTotal = txs.reduce((s, tx) => s + (tx.type === 'income' ? tx.amount : -tx.amount), 0)
             return (
               <div key={dateKey}>
                 <div className="flex justify-between items-center mb-2">
@@ -168,7 +172,7 @@ export default function Transactions() {
                           <span className="text-xl">{cat?.icon ?? '📌'}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-text truncate">
-                              {tx.note || cat?.name || 'Buchung'}
+                              {tx.note || cat?.name || t('transaction.unknown')}
                             </p>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <span className="text-xs text-text-muted">{cat?.name}</span>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, Star, Zap } from 'lucide-react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
 import { useCategories, usePaymentMethods, useMembers, useTransactionActions } from '../../hooks/useFirestore'
 import type { TransactionType } from '../../types'
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function AddTransactionModal({ onClose }: Props) {
+  const { t } = useTranslation()
   const categories = useCategories()
   const paymentMethods = usePaymentMethods()
   const members = useMembers()
@@ -52,7 +54,7 @@ export default function AddTransactionModal({ onClose }: Props) {
       <div className="relative w-full bg-surface rounded-t-xl shadow-xl max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
-          <h2 className="font-heading text-lg font-semibold text-text">Transaktion</h2>
+          <h2 className="font-heading text-lg font-semibold text-text">{t('transaction.title')}</h2>
           <button onClick={onClose} className="p-1.5 rounded-md text-text-muted hover:bg-bg-muted transition-colors">
             <X size={20} />
           </button>
@@ -61,22 +63,22 @@ export default function AddTransactionModal({ onClose }: Props) {
         <div className="p-4 space-y-4">
           {/* Type Toggle */}
           <div className="flex bg-bg-muted rounded-lg p-1 gap-1">
-            {(['expense', 'income'] as TransactionType[]).map(t => (
+            {(['expense', 'income'] as TransactionType[]).map(tx => (
               <button
-                key={t}
-                onClick={() => { setType(t); setCategoryId('') }}
+                key={tx}
+                onClick={() => { setType(tx); setCategoryId('') }}
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                  type === t ? 'bg-surface text-text shadow-sm' : 'text-text-secondary'
+                  type === tx ? 'bg-surface text-text shadow-sm' : 'text-text-secondary'
                 }`}
               >
-                {t === 'expense' ? 'Ausgabe' : 'Einnahme'}
+                {tx === 'expense' ? t('transaction.expense') : t('transaction.income')}
               </button>
             ))}
           </div>
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Betrag</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('common.amount')}</label>
             <div className="relative">
               <input
                 type="number"
@@ -92,7 +94,7 @@ export default function AddTransactionModal({ onClose }: Props) {
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Datum</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('common.date')}</label>
             <input
               type="date"
               value={date}
@@ -103,7 +105,7 @@ export default function AddTransactionModal({ onClose }: Props) {
 
           {/* Categories */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Kategorie</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('common.category')}</label>
             <div className="grid grid-cols-4 gap-2">
               {filteredCats.map(cat => (
                 <button
@@ -125,7 +127,7 @@ export default function AddTransactionModal({ onClose }: Props) {
           {/* Payment Method */}
           {paymentMethods.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-text mb-1.5">Zahlungsmethode</label>
+              <label className="block text-sm font-medium text-text mb-1.5">{t('transaction.paymentMethod')}</label>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setPaymentMethodId('')}
@@ -133,7 +135,7 @@ export default function AddTransactionModal({ onClose }: Props) {
                     !paymentMethodId ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
                   }`}
                 >
-                  Keine
+                  {t('transaction.none')}
                 </button>
                 {paymentMethods.map(pm => (
                   <button
@@ -153,7 +155,7 @@ export default function AddTransactionModal({ onClose }: Props) {
           {/* Member */}
           {members.length > 1 && (
             <div>
-              <label className="block text-sm font-medium text-text mb-1.5">Für wen</label>
+              <label className="block text-sm font-medium text-text mb-1.5">{t('transaction.forWhom')}</label>
               <div className="flex flex-wrap gap-2">
                 {members.map(m => (
                   <button
@@ -179,7 +181,7 @@ export default function AddTransactionModal({ onClose }: Props) {
               }`}
             >
               <Zap size={14} />
-              Außergewöhnlich
+              {t('transaction.extraordinary')}
             </button>
             <button
               onClick={() => setIsGift(!isGift)}
@@ -188,18 +190,18 @@ export default function AddTransactionModal({ onClose }: Props) {
               }`}
             >
               <Star size={14} />
-              Geschenk
+              {t('transaction.gift')}
             </button>
           </div>
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1.5">Notiz (optional)</label>
+            <label className="block text-sm font-medium text-text mb-1.5">{t('common.note')}</label>
             <input
               type="text"
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="Kurze Beschreibung..."
+              placeholder={t('transaction.notePlaceholder')}
               className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
             />
           </div>
@@ -210,7 +212,7 @@ export default function AddTransactionModal({ onClose }: Props) {
             disabled={saving || !amount || !categoryId}
             className="w-full bg-accent text-text-inverse py-3 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40"
           >
-            {saving ? 'Speichern...' : 'Speichern'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>

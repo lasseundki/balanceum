@@ -33,3 +33,21 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Font size scaling */
+html.text-sm-scale { font-size: 14px; }
+html.text-lg-scale { font-size: 18px; }
+
+/* High contrast overrides */
+html.high-contrast body {
+  color: #000000;
+  background-color: #FFFFFF;
+}
+html.high-contrast .text-text-secondary { color: #1C1916 !important; }
+html.high-contrast .text-text-muted { color: #3D3830 !important; }
+html.high-contrast .border-border { border-color: #6E6860 !important; }
+html.high-contrast .bg-bg-subtle { background-color: #ECEAE5 !important; }
+html.high-contrast .bg-surface { background-color: #FFFFFF !important; }
+html.high-contrast .bg-bg-muted { background-color: #E0DED8 !important; }
+html.high-contrast .text-accent { color: #3D6B5E !important; }
+html.high-contrast .text-accent-dark { color: #2A4D42 !important; }

@@ -1,0 +1,75 @@
+{
+  "nav": { "home": "Início", "list": "Lista", "analytics": "Análise", "settings": "Config." },
+  "common": {
+    "income": "Receitas", "expense": "Despesas", "balance": "Saldo",
+    "save": "Salvar", "saving": "Salvando...", "add": "Adicionar",
+    "cancel": "Cancelar", "back": "← Voltar", "all": "Todos",
+    "loading": "Carregando...", "amount": "Valor", "date": "Data",
+    "note": "Nota", "category": "Categoria", "name": "Nome", "none": "Nenhum"
+  },
+  "dashboard": {
+    "welcomeBack": "Bem-vindo de volta", "topExpenses": "Principais despesas",
+    "recentBookings": "Últimas transações", "noBookings": "Ainda sem transações",
+    "startHint": "Toque em + para começar",
+    "extraordinaryAlert": "Despesas extraordinárias",
+    "extraordinaryMonth": "{{amount}} este mês"
+  },
+  "transaction": {
+    "title": "Transação", "expense": "Despesa", "income": "Receita",
+    "paymentMethod": "Forma de pagamento", "forWhom": "Para quem",
+    "extraordinary": "Extraordinário", "gift": "Presente",
+    "notePlaceholder": "Breve descrição...", "none": "Nenhum",
+    "noBookings": "Nenhuma transação encontrada",
+    "search": "Pesquisar...", "unknown": "Transação"
+  },
+  "analytics": {
+    "monthlyOverview": "Visão mensal", "clickHint": "Toque em um mês para ver detalhes",
+    "reset": "Redefinir", "byCategory": "Despesas por categoria",
+    "total": "Total", "outlier": "Valor discrepante detectado",
+    "outlierDesc": "{{months}} acima de 150% da média mensal",
+    "extraordinary": "⚡ Despesas extraordinárias"
+  },
+  "cards": {
+    "title": "Formas de pagamento", "thisMonth": "Este mês", "noCards": "Ainda sem formas de pagamento",
+    "addTitle": "Adicionar forma de pagamento", "type": "Tipo", "color": "Cor",
+    "billingDay": "Dia de faturamento (opcional)", "billingDayPlaceholder": "ex. 15",
+    "billingInfo": "Faturamento no dia {{day}}.",
+    "types": { "card": "Cartão", "cash": "Dinheiro", "transfer": "Transferência", "other": "Outro" }
+  },
+  "settings": {
+    "title": "Configurações", "logout": "Sair",
+    "categories": "Categorias", "categoriesDesc": "{{count}} no total",
+    "members": "Membros da família", "membersDesc": "{{count}} pessoas",
+    "recurring": "Transações recorrentes", "recurringDesc": "{{count}} ativas",
+    "data": "Dados e backup", "dataDesc": "Exportar · Importar",
+    "language": "Idioma", "accessibility": "Acessibilidade",
+    "fontSize": "Tamanho da fonte", "fontSm": "Pequeno", "fontMd": "Normal", "fontLg": "Grande",
+    "highContrast": "Alto contraste", "highContrastDesc": "Contrastes mais fortes para melhor legibilidade",
+    "catType": { "expense": "Despesa", "income": "Receita", "both": "Ambos" },
+    "selectIcon": "Selecionar ícone", "relation": "Relação (ex. Parceiro/a)",
+    "selectCategory": "Escolher categoria...", "startDate": "Data de início",
+    "frequencies": { "daily": "Diário", "weekly": "Semanal", "monthly": "Mensal", "yearly": "Anual" },
+    "csvExport": "Exportar CSV", "csvExportDesc": "Para Excel / Google Sheets",
+    "jsonExport": "Exportar backup JSON", "jsonExportDesc": "Backup completo dos dados",
+    "cloudNote": "Seus dados estão no Firebase e disponíveis em todos os seus dispositivos. Backups ainda são recomendados."
+  },
+  "auth": {
+    "tagline": "Seu rastreador de finanças pessoal",
+    "loginTitle": "Entrar", "registerTitle": "Criar conta",
+    "forgotTitle": "Redefinir senha",
+    "forgotDesc": "Insira seu e-mail. Enviaremos um link de redefinição.",
+    "email": "E-mail", "password": "Senha", "passwordHint": "Mínimo 6 caracteres",
+    "login": "Entrar", "loggingIn": "Entrando...",
+    "register": "Criar conta", "registering": "Criando conta...",
+    "sendReset": "Enviar link", "sending": "Enviando...",
+    "noAccount": "Ainda não tem conta?", "hasAccount": "Já tem uma conta?",
+    "forgotPassword": "Esqueceu a senha?", "backToLogin": "Voltar ao login",
+    "emailSent": "E-mail enviado",
+    "emailSentDesc": "Enviamos um link para {{email}}. Verifique também sua pasta de spam.",
+    "wrongCredentials": "E-mail ou senha incorretos.",
+    "emailInUse": "Este e-mail já está cadastrado.",
+    "registerFailed": "Falha no cadastro. Por favor, tente novamente.",
+    "emailNotFound": "Endereço de e-mail não encontrado.",
+    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres."
+  }
+}
