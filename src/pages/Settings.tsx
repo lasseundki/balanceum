@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Download, LogOut, ChevronRight, Check } from 'lucide-react'
+import { X, Download, LogOut, ChevronRight, Check, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   useCategories, useCategoryActions,
@@ -32,7 +32,7 @@ export default function Settings() {
   const { fontSize, setFontSize, highContrast, setHighContrast } = useAccessibility()
   const { baseCurrency, setBaseCurrency } = useCurrency()
   const categories = useCategories()
-  const { addCategory, deleteCategory } = useCategoryActions()
+  const { addCategory, deleteCategory, updateCategory } = useCategoryActions()
   const members = useMembers()
   const { addMember, deleteMember } = useMemberActions()
   const recurring = useRecurringTransactions()
@@ -46,6 +46,12 @@ export default function Settings() {
   const [catName, setCatName] = useState('')
   const [catIcon, setCatIcon] = useState('📌')
   const [catType, setCatType] = useState<CategoryType>('expense')
+
+  // Category edit
+  const [editingCatId, setEditingCatId] = useState<string | null>(null)
+  const [editCatName, setEditCatName] = useState('')
+  const [editCatIcon, setEditCatIcon] = useState('📌')
+  const [editCatType, setEditCatType] = useState<CategoryType>('expense')
 
   // Member form
   const [memName, setMemName] = useState('')
@@ -70,6 +76,19 @@ export default function Settings() {
     if (!catName.trim()) return
     await addCategory({ name: catName.trim(), icon: catIcon, color: '#7BA89B', type: catType, order: categories.length })
     setCatName(''); setCatIcon('📌')
+  }
+
+  function startEditCat(cat: { id: string; name: string; icon: string; type: CategoryType }) {
+    setEditingCatId(cat.id)
+    setEditCatName(cat.name)
+    setEditCatIcon(cat.icon)
+    setEditCatType(cat.type)
+  }
+
+  async function handleSaveEditCat() {
+    if (!editCatName.trim() || !editingCatId) return
+    await updateCategory(editingCatId, { name: editCatName.trim(), icon: editCatIcon, type: editCatType })
+    setEditingCatId(null)
   }
 
   async function handleAddMember() {
@@ -215,11 +234,36 @@ export default function Settings() {
             </div>
             <div className="space-y-2">
               {categories.map(cat => (
-                <div key={cat.id} className="flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-3">
-                  <span className="text-xl">{cat.icon}</span>
-                  <span className="flex-1 text-sm font-medium text-text">{cat.name}</span>
-                  <span className="text-xs text-text-muted">{cat.type === 'expense' ? t('settings.catType.expense') : cat.type === 'income' ? t('settings.catType.income') : t('settings.catType.both')}</span>
-                  <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-text-muted hover:text-error hover:bg-error-light rounded-md transition-colors"><X size={15} /></button>
+                <div key={cat.id} className="bg-surface border border-border rounded-lg overflow-hidden">
+                  {editingCatId === cat.id ? (
+                    <div className="p-3 space-y-3">
+                      <div className="flex gap-2">
+                        {(['expense', 'income', 'both'] as CategoryType[]).map(ct => (
+                          <button key={ct} onClick={() => setEditCatType(ct)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${editCatType === ct ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary'}`}>
+                            {ct === 'expense' ? t('settings.catType.expense') : ct === 'income' ? t('settings.catType.income') : t('settings.catType.both')}
+                          </button>
+                        ))}
+                      </div>
+                      <input value={editCatName} onChange={e => setEditCatName(e.target.value)} className="w-full border border-border rounded-md px-3 py-2 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light" />
+                      <div className="flex flex-wrap gap-2">
+                        {CAT_ICONS.map(ic => (
+                          <button key={ic} onClick={() => setEditCatIcon(ic)} className={`text-xl p-1.5 rounded-md ${editCatIcon === ic ? 'bg-accent-light ring-2 ring-accent' : 'hover:bg-bg-muted'}`}>{ic}</button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingCatId(null)} className="flex-1 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary hover:bg-bg-subtle transition-colors">{t('common.cancel')}</button>
+                        <button onClick={handleSaveEditCat} disabled={!editCatName.trim()} className="flex-1 py-2 rounded-lg bg-accent text-text-inverse text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-40">{t('common.save')}</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <span className="text-xl">{cat.icon}</span>
+                      <span className="flex-1 text-sm font-medium text-text">{cat.name}</span>
+                      <span className="text-xs text-text-muted">{cat.type === 'expense' ? t('settings.catType.expense') : cat.type === 'income' ? t('settings.catType.income') : t('settings.catType.both')}</span>
+                      <button onClick={() => startEditCat(cat)} className="p-1.5 text-text-muted hover:text-accent hover:bg-accent-light rounded-md transition-colors"><Pencil size={15} /></button>
+                      <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-text-muted hover:text-error hover:bg-error-light rounded-md transition-colors"><X size={15} /></button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -41,7 +41,15 @@ export default function AddTransactionModal({ onClose }: Props) {
   const rateAbort = useRef<AbortController | null>(null)
 
   const isForeign = currency !== baseCurrency
-  const parsedAmount = parseFloat(amount.replace(',', '.')) || 0
+  const parsedAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.')) || 0
+
+  function formatAmountInput(raw: string): string {
+    const stripped = raw.replace(/\./g, '')
+    const onlyValid = stripped.replace(/[^\d,]/g, '')
+    const parts = onlyValid.split(',')
+    const intFormatted = (parts[0] || '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return parts.length > 1 ? `${intFormatted},${parts[1]}` : intFormatted
+  }
   const effectiveRate = rateError && manualRate ? parseFloat(manualRate.replace(',', '.')) : exchangeRate
   const amountInBase = isForeign ? parsedAmount * effectiveRate : parsedAmount
 
@@ -114,9 +122,10 @@ export default function AddTransactionModal({ onClose }: Props) {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
-                  onChange={e => setAmount(e.target.value)}
+                  onChange={e => setAmount(formatAmountInput(e.target.value))}
                   placeholder="0,00"
                   className="w-full border border-border rounded-md px-3 py-2.5 text-2xl font-bold text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
                   autoFocus

@@ -131,7 +131,11 @@ export function useCategoryActions() {
     if (!user) return
     await deleteDoc(userDoc(user.uid, 'categories', id))
   }, [user])
-  return { addCategory, deleteCategory }
+  const updateCategory = useCallback(async (id: string, data: Partial<Category>) => {
+    if (!user) return
+    await updateDoc(userDoc(user.uid, 'categories', id), data as Record<string, unknown>)
+  }, [user])
+  return { addCategory, deleteCategory, updateCategory }
 }
 
 export function usePaymentMethodActions() {
