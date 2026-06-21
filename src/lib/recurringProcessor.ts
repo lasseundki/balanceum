@@ -47,6 +47,7 @@ export async function processRecurringTransactions(
         isGift: rec.isGift,
         isExtraordinary: rec.isExtraordinary,
         createdAt: Date.now(),
+        recurringId: rec.id,
       })
     }
 

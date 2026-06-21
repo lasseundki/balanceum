@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useMonthTransactions, useCategories, useTransactionActions } from '../hooks/useFirestore'
-import EditTransactionModal from '../components/modals/EditTransactionModal'
+import { useMonthTransactions, useCategories } from '../hooks/useFirestore'
+import TransactionDetailSheet from '../components/modals/TransactionDetailSheet'
 import type { Transaction } from '../types'
 import { fmt, fmtMonthYear, fmtCurrency } from '../lib/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount } from '../lib/currency'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
+
+type SpecialFilter = 'all' | 'extraordinary' | 'normal' | 'fixed' | 'gifts'
 
 export default function Transactions() {
   const { t, i18n } = useTranslation()
@@ -18,14 +20,13 @@ export default function Transactions() {
   const [month, setMonth] = useState(now.getMonth())
   const { transactions, loading } = useMonthTransactions(year, month)
   const categories = useCategories()
-  const { deleteTransaction } = useTransactionActions()
 
   const [search, setSearch] = useState('')
   const [filterCatId, setFilterCatId] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all')
   const [filterCurrency, setFilterCurrency] = useState<string>('')
-  const [deleting, setDeleting] = useState<string | null>(null)
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
+  const [filterSpecial, setFilterSpecial] = useState<SpecialFilter>('all')
+  const [viewingTx, setViewingTx] = useState<Transaction | null>(null)
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
 
@@ -48,6 +49,10 @@ export default function Transactions() {
       if (filterType !== 'all' && tx.type !== filterType) return false
       if (filterCatId && tx.categoryId !== filterCatId) return false
       if (filterCurrency && (tx.currency ?? baseCurrency) !== filterCurrency) return false
+      if (filterSpecial === 'extraordinary' && !tx.isExtraordinary) return false
+      if (filterSpecial === 'normal' && tx.isExtraordinary) return false
+      if (filterSpecial === 'fixed' && !tx.recurringId) return false
+      if (filterSpecial === 'gifts' && !tx.isGift) return false
       if (search) {
         const q = search.toLowerCase()
         const catName = catMap[tx.categoryId]?.name?.toLowerCase() ?? ''
@@ -56,7 +61,7 @@ export default function Transactions() {
       }
       return true
     })
-  }, [transactions, filterType, filterCatId, filterCurrency, search, catMap, baseCurrency])
+  }, [transactions, filterType, filterCatId, filterCurrency, filterSpecial, search, catMap, baseCurrency])
 
   const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + effectiveAmount(tx), 0)
   const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + effectiveAmount(tx), 0)
@@ -71,11 +76,13 @@ export default function Transactions() {
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a))
   }, [filtered])
 
-  async function handleDelete(id: string) {
-    setDeleting(id)
-    await deleteTransaction(id)
-    setDeleting(null)
-  }
+  const specialFilters: { key: SpecialFilter; label: string }[] = [
+    { key: 'all', label: t('transaction.filterAll') },
+    { key: 'extraordinary', label: t('transaction.filterExtraordinary') },
+    { key: 'normal', label: t('transaction.filterNormal') },
+    { key: 'fixed', label: t('transaction.filterFixed') },
+    { key: 'gifts', label: t('transaction.filterGifts') },
+  ]
 
   return (
     <>
@@ -127,6 +134,21 @@ export default function Transactions() {
             }`}
           >
             {type === 'all' ? t('common.all') : type === 'expense' ? t('common.expense') : t('common.income')}
+          </button>
+        ))}
+      </div>
+
+      {/* Special filter pills */}
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-hide">
+        {specialFilters.map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilterSpecial(f.key)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filterSpecial === f.key ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+            }`}
+          >
+            {f.label}
           </button>
         ))}
       </div>
@@ -216,8 +238,10 @@ export default function Transactions() {
                       <div key={tx.id}>
                         {i > 0 && <div className="h-px bg-border mx-4" />}
                         <div
-                          className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-bg-subtle transition-colors"
-                          onClick={() => setEditingTx(tx)}
+                          className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-bg-subtle transition-colors ${
+                            tx.isExtraordinary ? 'border-l-4 border-l-warning' : ''
+                          }`}
+                          onClick={() => setViewingTx(tx)}
                         >
                           <span className="text-xl">{cat?.icon ?? '📌'}</span>
                           <div className="flex-1 min-w-0">
@@ -232,6 +256,9 @@ export default function Transactions() {
                               {tx.isGift && (
                                 <span className="text-xs bg-info-light text-info px-1.5 py-0.5 rounded-sm font-medium">🎁</span>
                               )}
+                              {tx.recurringId && (
+                                <span className="text-xs text-text-muted">↻</span>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">
@@ -244,13 +271,6 @@ export default function Transactions() {
                               {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
                             </span>
                           </div>
-                          <button
-                            onClick={e => { e.stopPropagation(); handleDelete(tx.id) }}
-                            disabled={deleting === tx.id}
-                            className="p-1.5 rounded-md text-text-muted hover:text-error hover:bg-error-light transition-colors flex-shrink-0"
-                          >
-                            <Trash2 size={15} />
-                          </button>
                         </div>
                       </div>
                     )
@@ -262,8 +282,7 @@ export default function Transactions() {
         </div>
       )}
     </div>
-    {editingTx && <EditTransactionModal tx={editingTx} onClose={() => setEditingTx(null)} />}
+    {viewingTx && <TransactionDetailSheet tx={viewingTx} onClose={() => setViewingTx(null)} />}
     </>
   )
 }
-

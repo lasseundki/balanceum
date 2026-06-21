@@ -12,7 +12,9 @@
     "recentBookings": "Recent Transactions", "noBookings": "No transactions yet",
     "startHint": "Tap + to get started",
     "extraordinaryAlert": "Extraordinary Expenses",
-    "extraordinaryMonth": "{{amount}} this month"
+    "extraordinaryMonth": "{{amount}} this month",
+    "quickEntry": "Quick Entry",
+    "budgetOverview": "Budgets this month"
   },
   "transaction": {
     "title": "Transaction", "expense": "Expense", "income": "Income",
@@ -21,27 +23,42 @@
     "notePlaceholder": "Short description...", "none": "None",
     "noBookings": "No transactions found",
     "search": "Search...", "unknown": "Transaction",
-    "editTitle": "Edit Transaction"
+    "editTitle": "Edit Transaction",
+    "details": "Details",
+    "filterAll": "All", "filterExtraordinary": "Extraordinary",
+    "filterNormal": "Normal", "filterFixed": "Fixed Costs", "filterGifts": "Gifts",
+    "deleted": "Transaction deleted", "undoDelete": "Undo"
   },
   "analytics": {
     "monthlyOverview": "Monthly Overview", "clickHint": "Tap a month for details",
     "reset": "Reset", "byCategory": "Expenses by Category",
     "total": "Total", "outlier": "Outlier detected",
     "outlierDesc": "{{months}} over 150% of monthly average",
-    "extraordinary": "⚡ Extraordinary Expenses"
+    "extraordinary": "⚡ Extraordinary Expenses",
+    "fixedCosts": "Fixed Costs", "fixedCostsCard": "Monthly Fixed Costs",
+    "excludeFixed": "Hide fixed costs", "includeFixed": "Show fixed costs",
+    "monthlyDetail": "Monthly Details",
+    "yearView": "Year View", "categoryView": "By Category",
+    "selectCategory": "Select category",
+    "noCategoryData": "No data for this category"
   },
   "cards": {
     "title": "Payment Methods", "thisMonth": "This month", "noCards": "No payment methods yet",
     "addTitle": "Add Payment Method", "type": "Type", "color": "Color",
     "billingDay": "Billing day (optional)", "billingDayPlaceholder": "e.g. 15",
     "billingInfo": "Billing on the {{day}}th.",
-    "types": { "card": "Card", "cash": "Cash", "transfer": "Transfer", "other": "Other" }
+    "subtype": "Card type", "subtypeDebit": "Debit", "subtypeCredit": "Credit",
+    "bank": "Bank (optional)", "bankPlaceholder": "e.g. Chase, Amex...",
+    "creditBalance": "Balance due", "billingBalance": "Still to pay",
+    "types": { "card": "Card", "cash": "Cash", "transfer": "Transfer", "other": "Other", "qr": "QR/Mobile" }
   },
   "settings": {
     "title": "Settings", "logout": "Sign out",
     "categories": "Categories", "categoriesDesc": "{{count}} total",
     "members": "Family Members", "membersDesc": "{{count}} people",
     "recurring": "Recurring Transactions", "recurringDesc": "{{count}} active",
+    "budgets": "Monthly Budgets", "budgetsDesc": "{{count}} set",
+    "templates": "Quick Entry", "templatesDesc": "{{count}} templates",
     "data": "Data & Backup", "dataDesc": "Export · Import",
     "language": "Language", "accessibility": "Accessibility",
     "fontSize": "Font Size", "fontSm": "Small", "fontMd": "Normal", "fontLg": "Large",
@@ -52,6 +69,13 @@
     "frequencies": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "yearly": "Yearly" },
     "csvExport": "Export CSV", "csvExportDesc": "For Excel / Google Sheets",
     "jsonExport": "Export JSON Backup", "jsonExportDesc": "Full data backup",
+    "csvImport": "Import CSV", "csvImportDesc": "Read Balanceum export",
+    "csvPreview": "Preview ({{count}} transactions)", "csvConfirm": "Import",
+    "csvError": "Could not read file",
+    "noBudgets": "No budgets set yet",
+    "monthlyBudget": "Monthly budget (€)",
+    "noTemplates": "No quick entries yet",
+    "templateName": "Template name",
     "cloudNote": "Your data is stored in Firebase and available on all your devices. Backups are still recommended."
   },
   "currency": {

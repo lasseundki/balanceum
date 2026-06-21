@@ -12,7 +12,9 @@
     "recentBookings": "Últimas transações", "noBookings": "Ainda sem transações",
     "startHint": "Toque em + para começar",
     "extraordinaryAlert": "Despesas extraordinárias",
-    "extraordinaryMonth": "{{amount}} este mês"
+    "extraordinaryMonth": "{{amount}} este mês",
+    "quickEntry": "Entrada rápida",
+    "budgetOverview": "Orçamentos este mês"
   },
   "transaction": {
     "title": "Transação", "expense": "Despesa", "income": "Receita",
@@ -21,27 +23,42 @@
     "notePlaceholder": "Breve descrição...", "none": "Nenhum",
     "noBookings": "Nenhuma transação encontrada",
     "search": "Pesquisar...", "unknown": "Transação",
-    "editTitle": "Editar transação"
+    "editTitle": "Editar transação",
+    "details": "Detalhes",
+    "filterAll": "Todos", "filterExtraordinary": "Extraordinário",
+    "filterNormal": "Normal", "filterFixed": "Custos fixos", "filterGifts": "Presentes",
+    "deleted": "Transação excluída", "undoDelete": "Desfazer"
   },
   "analytics": {
     "monthlyOverview": "Visão mensal", "clickHint": "Toque em um mês para ver detalhes",
     "reset": "Redefinir", "byCategory": "Despesas por categoria",
     "total": "Total", "outlier": "Valor discrepante detectado",
     "outlierDesc": "{{months}} acima de 150% da média mensal",
-    "extraordinary": "⚡ Despesas extraordinárias"
+    "extraordinary": "⚡ Despesas extraordinárias",
+    "fixedCosts": "Custos fixos", "fixedCostsCard": "Custos fixos mensais",
+    "excludeFixed": "Ocultar custos fixos", "includeFixed": "Mostrar custos fixos",
+    "monthlyDetail": "Detalhes do mês",
+    "yearView": "Visão anual", "categoryView": "Por categoria",
+    "selectCategory": "Selecionar categoria",
+    "noCategoryData": "Sem dados para esta categoria"
   },
   "cards": {
     "title": "Formas de pagamento", "thisMonth": "Este mês", "noCards": "Ainda sem formas de pagamento",
     "addTitle": "Adicionar forma de pagamento", "type": "Tipo", "color": "Cor",
     "billingDay": "Dia de faturamento (opcional)", "billingDayPlaceholder": "ex. 15",
     "billingInfo": "Faturamento no dia {{day}}.",
-    "types": { "card": "Cartão", "cash": "Dinheiro", "transfer": "Transferência", "other": "Outro" }
+    "subtype": "Tipo de cartão", "subtypeDebit": "Débito", "subtypeCredit": "Crédito",
+    "bank": "Banco (opcional)", "bankPlaceholder": "ex. Nubank, Itaú...",
+    "creditBalance": "Fatura pendente", "billingBalance": "A pagar",
+    "types": { "card": "Cartão", "cash": "Dinheiro", "transfer": "Transferência", "other": "Outro", "qr": "QR/Mobile" }
   },
   "settings": {
     "title": "Configurações", "logout": "Sair",
     "categories": "Categorias", "categoriesDesc": "{{count}} no total",
     "members": "Membros da família", "membersDesc": "{{count}} pessoas",
     "recurring": "Transações recorrentes", "recurringDesc": "{{count}} ativas",
+    "budgets": "Orçamentos mensais", "budgetsDesc": "{{count}} definidos",
+    "templates": "Entradas rápidas", "templatesDesc": "{{count}} modelos",
     "data": "Dados e backup", "dataDesc": "Exportar · Importar",
     "language": "Idioma", "accessibility": "Acessibilidade",
     "fontSize": "Tamanho da fonte", "fontSm": "Pequeno", "fontMd": "Normal", "fontLg": "Grande",
@@ -52,6 +69,13 @@
     "frequencies": { "daily": "Diário", "weekly": "Semanal", "monthly": "Mensal", "yearly": "Anual" },
     "csvExport": "Exportar CSV", "csvExportDesc": "Para Excel / Google Sheets",
     "jsonExport": "Exportar backup JSON", "jsonExportDesc": "Backup completo dos dados",
+    "csvImport": "Importar CSV", "csvImportDesc": "Ler exportação do Balanceum",
+    "csvPreview": "Pré-visualização ({{count}} transações)", "csvConfirm": "Importar",
+    "csvError": "Não foi possível ler o arquivo",
+    "noBudgets": "Nenhum orçamento definido ainda",
+    "monthlyBudget": "Orçamento mensal (€)",
+    "noTemplates": "Nenhuma entrada rápida ainda",
+    "templateName": "Nome do modelo",
     "cloudNote": "Seus dados estão no Firebase e disponíveis em todos os seus dispositivos. Backups ainda são recomendados."
   },
   "currency": {

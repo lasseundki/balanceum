@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   collection, query, where, orderBy, onSnapshot,
-  addDoc, updateDoc, deleteDoc, doc,
+  addDoc, updateDoc, deleteDoc, doc, getDocs,
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from '../contexts/AuthContext'
 import { processRecurringTransactions } from '../lib/recurringProcessor'
 import { monthRange, yearRange } from '../lib/formatters'
-import type { Transaction, Category, PaymentMethod, Member, RecurringTransaction } from '../types'
+import type { Transaction, Category, PaymentMethod, Member, RecurringTransaction, Budget, Template } from '../types'
 
 function userCol(uid: string, name: string) {
   return collection(db, `users/${uid}/${name}`)
@@ -184,6 +184,63 @@ export function useRecurringActions() {
     await updateDoc(userDoc(user.uid, 'recurringTransactions', id), data as Record<string, unknown>)
   }, [user])
   return { addRecurring, deleteRecurring, updateRecurring }
+}
+
+export function useBudgets() {
+  const { user } = useAuth()
+  const [budgets, setBudgets] = useState<Budget[]>([])
+  useEffect(() => {
+    if (!user) return
+    return onSnapshot(userCol(user.uid, 'budgets'), snap => {
+      setBudgets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Budget)))
+    })
+  }, [user])
+  return budgets
+}
+
+export function useBudgetActions() {
+  const { user } = useAuth()
+  const setBudget = useCallback(async (categoryId: string, amount: number) => {
+    if (!user) return
+    const col = userCol(user.uid, 'budgets')
+    const q = query(col, where('categoryId', '==', categoryId))
+    const snap = await getDocs(q)
+    if (snap.empty) {
+      await addDoc(col, { categoryId, amount })
+    } else {
+      await updateDoc(snap.docs[0].ref, { amount })
+    }
+  }, [user])
+  const deleteBudget = useCallback(async (id: string) => {
+    if (!user) return
+    await deleteDoc(userDoc(user.uid, 'budgets', id))
+  }, [user])
+  return { setBudget, deleteBudget }
+}
+
+export function useTemplates() {
+  const { user } = useAuth()
+  const [templates, setTemplates] = useState<Template[]>([])
+  useEffect(() => {
+    if (!user) return
+    return onSnapshot(userCol(user.uid, 'templates'), snap => {
+      setTemplates(snap.docs.map(d => ({ id: d.id, ...d.data() } as Template)))
+    })
+  }, [user])
+  return templates
+}
+
+export function useTemplateActions() {
+  const { user } = useAuth()
+  const addTemplate = useCallback(async (data: Omit<Template, 'id'>) => {
+    if (!user) return
+    await addDoc(userCol(user.uid, 'templates'), data)
+  }, [user])
+  const deleteTemplate = useCallback(async (id: string) => {
+    if (!user) return
+    await deleteDoc(userDoc(user.uid, 'templates', id))
+  }, [user])
+  return { addTemplate, deleteTemplate }
 }
 
 export function useRecurringProcessor() {

@@ -1,6 +1,6 @@
 export type TransactionType = 'expense' | 'income'
 export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly'
-export type PaymentType = 'cash' | 'card' | 'transfer' | 'other'
+export type PaymentType = 'cash' | 'card' | 'transfer' | 'other' | 'qr'
 export type CategoryType = 'expense' | 'income' | 'both'
 
 export interface UserProfile {
@@ -22,6 +22,8 @@ export interface PaymentMethod {
   id: string
   name: string
   type: PaymentType
+  subtype?: 'debit' | 'credit'
+  bank?: string
   color: string
   billingDay?: number
   last4?: string
@@ -49,6 +51,7 @@ export interface Transaction {
   isGift: boolean
   isExtraordinary: boolean
   createdAt: number
+  recurringId?: string
 }
 
 export interface RecurringTransaction {
@@ -62,6 +65,24 @@ export interface RecurringTransaction {
   frequency: Frequency
   startDate: number
   lastGeneratedDate?: number
+  isGift: boolean
+  isExtraordinary: boolean
+}
+
+export interface Budget {
+  id: string
+  categoryId: string
+  amount: number
+}
+
+export interface Template {
+  id: string
+  name: string
+  type: TransactionType
+  amount: number
+  categoryId: string
+  paymentMethodId?: string
+  note?: string
   isGift: boolean
   isExtraordinary: boolean
 }

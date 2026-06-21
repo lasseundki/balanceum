@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useMonthTransactions, useCategories } from '../hooks/useFirestore'
+import { useMonthTransactions, useCategories, useTemplates, useBudgets } from '../hooks/useFirestore'
 import { fmt, fmtShort, fmtMonthYear, fmtDateShort, fmtCurrency } from '../lib/formatters'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
+import AddTransactionModal from '../components/modals/AddTransactionModal'
+import type { Template } from '../types'
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -16,6 +18,11 @@ export default function Dashboard() {
   const [month, setMonth] = useState(now.getMonth())
   const { transactions, loading } = useMonthTransactions(year, month)
   const categories = useCategories()
+  const templates = useTemplates()
+  const budgets = useBudgets()
+
+  const [templateModal, setTemplateModal] = useState<Template | null>(null)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -46,7 +53,6 @@ export default function Dashboard() {
   const hasExtraordinary = transactions.some(t => t.isExtraordinary)
   const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
 
-  // Foreign currency breakdown
   const foreignTxs = transactions.filter(t => t.currency && t.currency !== baseCurrency)
   const foreignBreakdown = foreignTxs.reduce<Record<string, { amount: number; inBase: number }>>((acc, t) => {
     const c = t.currency!
@@ -56,9 +62,15 @@ export default function Dashboard() {
     return acc
   }, {})
 
-  const recent = transactions.slice(0, 12)
+  const budgetMap = Object.fromEntries(budgets.map(b => [b.categoryId, b.amount]))
 
+  const recent = transactions.slice(0, 12)
   const displayName = user?.displayName?.split(' ')[0] ?? 'Hallo'
+
+  function handleUseTemplate(tmpl: Template) {
+    setTemplateModal(tmpl)
+    setShowTemplateModal(true)
+  }
 
   return (
     <div className="px-4 pt-4 pb-nav space-y-4">
@@ -105,6 +117,29 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Quick entry templates */}
+      {templates.length > 0 && (
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <h2 className="font-heading text-sm font-semibold text-text mb-3">{t('dashboard.quickEntry')}</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {templates.map(tmpl => {
+              const cat = catMap[tmpl.categoryId]
+              return (
+                <button
+                  key={tmpl.id}
+                  onClick={() => handleUseTemplate(tmpl)}
+                  className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2.5 bg-bg-subtle border border-border rounded-xl hover:bg-accent-light hover:border-accent transition-colors min-w-[80px]"
+                >
+                  <span className="text-xl">{cat?.icon ?? '📌'}</span>
+                  <span className="text-xs font-medium text-text text-center leading-tight">{tmpl.name}</span>
+                  <span className="text-xs text-text-muted">{fmt(tmpl.amount)}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Extraordinary Alert */}
       {hasExtraordinary && (
         <div className="flex items-center gap-3 bg-warning-light border border-warning rounded-lg p-3">
@@ -139,14 +174,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Top Categories */}
+      {/* Top Categories + Budget bars */}
       {topCats.length > 0 && (
         <div className="bg-surface border border-border rounded-xl p-4">
           <h2 className="font-heading text-base font-semibold text-text mb-3">{t('dashboard.topExpenses')}</h2>
           <div className="space-y-3">
             {topCats.map(([catId, total]) => {
               const cat = catMap[catId]
-              const pct = expense > 0 ? (total / expense) * 100 : 0
+              const budget = budgetMap[catId]
+              const pct = budget ? Math.min((total / budget) * 100, 100) : expense > 0 ? (total / expense) * 100 : 0
+              const barColor = budget
+                ? pct >= 100 ? '#B87B72' : pct >= 80 ? '#C9A05A' : '#7BA89B'
+                : '#7BA89B'
               return (
                 <div key={catId}>
                   <div className="flex justify-between items-center mb-1">
@@ -154,10 +193,15 @@ export default function Dashboard() {
                       <span>{cat?.icon ?? '📌'}</span>
                       <span className="text-sm font-medium text-text">{cat?.name ?? '?'}</span>
                     </div>
-                    <span className="text-sm font-semibold text-text">{fmt(total)}</span>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-text">{fmt(total)}</span>
+                      {budget ? (
+                        <span className="text-xs text-text-muted ml-1">/ {fmt(budget)}</span>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-accent rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: barColor }} />
                   </div>
                 </div>
               )
@@ -185,7 +229,7 @@ export default function Dashboard() {
                       <p className="text-xs text-text-muted">{fmtDateShort(tx.date)}</p>
                     </div>
                     <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
-                      {tx.type === 'income' ? '+' : '−'}{fmt(tx.amount)}
+                      {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
                     </span>
                   </div>
                 </div>
@@ -201,6 +245,13 @@ export default function Dashboard() {
           <p className="font-heading text-lg font-medium text-text-secondary">{t('dashboard.noBookings')}</p>
           <p className="text-sm mt-1">{t('dashboard.startHint')}</p>
         </div>
+      )}
+
+      {showTemplateModal && templateModal && (
+        <AddTransactionModal
+          template={templateModal}
+          onClose={() => { setShowTemplateModal(false); setTemplateModal(null) }}
+        />
       )}
     </div>
   )

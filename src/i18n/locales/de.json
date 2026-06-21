@@ -12,7 +12,9 @@
     "recentBookings": "Letzte Buchungen", "noBookings": "Noch keine Buchungen",
     "startHint": "Tippe auf + um zu starten",
     "extraordinaryAlert": "Außergewöhnliche Ausgaben",
-    "extraordinaryMonth": "{{amount}} diesen Monat"
+    "extraordinaryMonth": "{{amount}} diesen Monat",
+    "quickEntry": "Schnelleingabe",
+    "budgetOverview": "Budgets diesen Monat"
   },
   "transaction": {
     "title": "Transaktion", "expense": "Ausgabe", "income": "Einnahme",
@@ -21,27 +23,42 @@
     "notePlaceholder": "Kurze Beschreibung...", "none": "Keine",
     "noBookings": "Keine Transaktionen gefunden",
     "search": "Suchen...", "unknown": "Buchung",
-    "editTitle": "Buchung bearbeiten"
+    "editTitle": "Buchung bearbeiten",
+    "details": "Details",
+    "filterAll": "Alle", "filterExtraordinary": "Außergewöhnlich",
+    "filterNormal": "Normal", "filterFixed": "Fixkosten", "filterGifts": "Geschenke",
+    "deleted": "Buchung gelöscht", "undoDelete": "Rückgängig"
   },
   "analytics": {
     "monthlyOverview": "Monatsübersicht", "clickHint": "Tippe auf einen Monat für Details",
     "reset": "Zurücksetzen", "byCategory": "Ausgaben nach Kategorie",
     "total": "Gesamt", "outlier": "Ausreißer erkannt",
     "outlierDesc": "{{months}} über 150% des Monatsdurchschnitts",
-    "extraordinary": "⚡ Außergewöhnliche Ausgaben"
+    "extraordinary": "⚡ Außergewöhnliche Ausgaben",
+    "fixedCosts": "Fixkosten", "fixedCostsCard": "Monatliche Fixkosten",
+    "excludeFixed": "Fixkosten ausblenden", "includeFixed": "Fixkosten einblenden",
+    "monthlyDetail": "Monatsdetails",
+    "yearView": "Jahresansicht", "categoryView": "Kategorienansicht",
+    "selectCategory": "Kategorie wählen",
+    "noCategoryData": "Keine Daten für diese Kategorie"
   },
   "cards": {
     "title": "Zahlungsmittel", "thisMonth": "Diesen Monat", "noCards": "Noch keine Zahlungsmittel",
     "addTitle": "Zahlungsmittel hinzufügen", "type": "Typ", "color": "Farbe",
     "billingDay": "Abrechnungstag (optional)", "billingDayPlaceholder": "z.B. 15",
     "billingInfo": "Abrechnung am {{day}}.",
-    "types": { "card": "Karte", "cash": "Bar", "transfer": "Überweisung", "other": "Sonstiges" }
+    "subtype": "Kartentyp", "subtypeDebit": "Debit", "subtypeCredit": "Kredit",
+    "bank": "Bank (optional)", "bankPlaceholder": "z.B. ING, DKB...",
+    "creditBalance": "Schuldenstand", "billingBalance": "Noch zu bezahlen",
+    "types": { "card": "Karte", "cash": "Bar", "transfer": "Überweisung", "other": "Sonstiges", "qr": "QR/Mobile" }
   },
   "settings": {
     "title": "Einstellungen", "logout": "Abmelden",
     "categories": "Kategorien", "categoriesDesc": "{{count}} gesamt",
     "members": "Familienmitglieder", "membersDesc": "{{count}} Personen",
     "recurring": "Wiederkehrende Buchungen", "recurringDesc": "{{count}} aktiv",
+    "budgets": "Monatliche Budgets", "budgetsDesc": "{{count}} festgelegt",
+    "templates": "Schnelleingaben", "templatesDesc": "{{count}} Vorlagen",
     "data": "Daten & Backup", "dataDesc": "Export · Import",
     "language": "Sprache", "accessibility": "Barrierefreiheit",
     "fontSize": "Schriftgröße", "fontSm": "Klein", "fontMd": "Normal", "fontLg": "Groß",
@@ -52,6 +69,13 @@
     "frequencies": { "daily": "Täglich", "weekly": "Wöchentlich", "monthly": "Monatlich", "yearly": "Jährlich" },
     "csvExport": "CSV exportieren", "csvExportDesc": "Für Excel / Google Sheets",
     "jsonExport": "JSON-Backup exportieren", "jsonExportDesc": "Vollständige Datensicherung",
+    "csvImport": "CSV importieren", "csvImportDesc": "Balanceum-Export einlesen",
+    "csvPreview": "Vorschau ({{count}} Buchungen)", "csvConfirm": "Importieren",
+    "csvError": "Datei konnte nicht gelesen werden",
+    "noBudgets": "Noch keine Budgets festgelegt",
+    "monthlyBudget": "Monatliches Budget (€)",
+    "noTemplates": "Noch keine Schnelleingaben",
+    "templateName": "Name der Vorlage",
     "cloudNote": "Deine Daten sind in der Firebase-Cloud gespeichert und auf allen Geräten verfügbar. Backups werden trotzdem empfohlen."
   },
   "currency": {

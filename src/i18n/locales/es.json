@@ -12,7 +12,9 @@
     "recentBookings": "Últimas transacciones", "noBookings": "Aún no hay transacciones",
     "startHint": "Toca + para comenzar",
     "extraordinaryAlert": "Gastos extraordinarios",
-    "extraordinaryMonth": "{{amount}} este mes"
+    "extraordinaryMonth": "{{amount}} este mes",
+    "quickEntry": "Entrada rápida",
+    "budgetOverview": "Presupuestos este mes"
   },
   "transaction": {
     "title": "Transacción", "expense": "Gasto", "income": "Ingreso",
@@ -21,27 +23,42 @@
     "notePlaceholder": "Breve descripción...", "none": "Ninguno",
     "noBookings": "No se encontraron transacciones",
     "search": "Buscar...", "unknown": "Transacción",
-    "editTitle": "Editar transacción"
+    "editTitle": "Editar transacción",
+    "details": "Detalles",
+    "filterAll": "Todos", "filterExtraordinary": "Extraordinario",
+    "filterNormal": "Normal", "filterFixed": "Costos fijos", "filterGifts": "Regalos",
+    "deleted": "Transacción eliminada", "undoDelete": "Deshacer"
   },
   "analytics": {
     "monthlyOverview": "Resumen mensual", "clickHint": "Toca un mes para ver detalles",
     "reset": "Restablecer", "byCategory": "Gastos por categoría",
     "total": "Total", "outlier": "Valor atípico detectado",
     "outlierDesc": "{{months}} superan el 150% del promedio mensual",
-    "extraordinary": "⚡ Gastos extraordinarios"
+    "extraordinary": "⚡ Gastos extraordinarios",
+    "fixedCosts": "Costos fijos", "fixedCostsCard": "Costos fijos mensuales",
+    "excludeFixed": "Ocultar costos fijos", "includeFixed": "Mostrar costos fijos",
+    "monthlyDetail": "Detalle mensual",
+    "yearView": "Vista anual", "categoryView": "Por categoría",
+    "selectCategory": "Seleccionar categoría",
+    "noCategoryData": "Sin datos para esta categoría"
   },
   "cards": {
     "title": "Métodos de pago", "thisMonth": "Este mes", "noCards": "Aún no hay métodos de pago",
     "addTitle": "Agregar método de pago", "type": "Tipo", "color": "Color",
     "billingDay": "Día de facturación (opcional)", "billingDayPlaceholder": "ej. 15",
     "billingInfo": "Facturación el día {{day}}.",
-    "types": { "card": "Tarjeta", "cash": "Efectivo", "transfer": "Transferencia", "other": "Otro" }
+    "subtype": "Tipo de tarjeta", "subtypeDebit": "Débito", "subtypeCredit": "Crédito",
+    "bank": "Banco (opcional)", "bankPlaceholder": "ej. Santander, BBVA...",
+    "creditBalance": "Deuda pendiente", "billingBalance": "Por pagar",
+    "types": { "card": "Tarjeta", "cash": "Efectivo", "transfer": "Transferencia", "other": "Otro", "qr": "QR/Móvil" }
   },
   "settings": {
     "title": "Configuración", "logout": "Cerrar sesión",
     "categories": "Categorías", "categoriesDesc": "{{count}} en total",
     "members": "Miembros de la familia", "membersDesc": "{{count}} personas",
     "recurring": "Transacciones recurrentes", "recurringDesc": "{{count}} activas",
+    "budgets": "Presupuestos mensuales", "budgetsDesc": "{{count}} establecidos",
+    "templates": "Entradas rápidas", "templatesDesc": "{{count}} plantillas",
     "data": "Datos y respaldo", "dataDesc": "Exportar · Importar",
     "language": "Idioma", "accessibility": "Accesibilidad",
     "fontSize": "Tamaño de letra", "fontSm": "Pequeño", "fontMd": "Normal", "fontLg": "Grande",
@@ -52,6 +69,13 @@
     "frequencies": { "daily": "Diario", "weekly": "Semanal", "monthly": "Mensual", "yearly": "Anual" },
     "csvExport": "Exportar CSV", "csvExportDesc": "Para Excel / Google Sheets",
     "jsonExport": "Exportar respaldo JSON", "jsonExportDesc": "Copia de seguridad completa",
+    "csvImport": "Importar CSV", "csvImportDesc": "Leer exportación de Balanceum",
+    "csvPreview": "Vista previa ({{count}} transacciones)", "csvConfirm": "Importar",
+    "csvError": "No se pudo leer el archivo",
+    "noBudgets": "Aún no hay presupuestos establecidos",
+    "monthlyBudget": "Presupuesto mensual (€)",
+    "noTemplates": "Aún no hay entradas rápidas",
+    "templateName": "Nombre de la plantilla",
     "cloudNote": "Tus datos están en Firebase y disponibles en todos tus dispositivos. Los respaldos igualmente se recomiendan."
   },
   "currency": {

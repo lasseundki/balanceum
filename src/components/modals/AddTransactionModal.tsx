@@ -7,13 +7,14 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 import { CURRENCIES, fetchExchangeRate } from '../../lib/currency'
 import { fmtCurrency } from '../../lib/formatters'
 import { saveNoteToHistory, getNoteHistory } from '../../lib/noteHistory'
-import type { TransactionType } from '../../types'
+import type { TransactionType, Template } from '../../types'
 
 interface Props {
   onClose: () => void
+  template?: Template
 }
 
-export default function AddTransactionModal({ onClose }: Props) {
+export default function AddTransactionModal({ onClose, template }: Props) {
   const { t } = useTranslation()
   const { baseCurrency } = useCurrency()
   const categories = useCategories()
@@ -21,16 +22,16 @@ export default function AddTransactionModal({ onClose }: Props) {
   const members = useMembers()
   const { addTransaction } = useTransactionActions()
 
-  const [type, setType] = useState<TransactionType>('expense')
-  const [amount, setAmount] = useState('')
+  const [type, setType] = useState<TransactionType>(template?.type ?? 'expense')
+  const [amount, setAmount] = useState(() => template ? String(template.amount).replace('.', ',') : '')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [categoryId, setCategoryId] = useState('')
-  const [paymentMethodId, setPaymentMethodId] = useState('')
+  const [categoryId, setCategoryId] = useState(template?.categoryId ?? '')
+  const [paymentMethodId, setPaymentMethodId] = useState(template?.paymentMethodId ?? '')
   const [memberId, setMemberId] = useState('')
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(template?.note ?? '')
   const [noteSuggestions, setNoteSuggestions] = useState<string[]>([])
-  const [isGift, setIsGift] = useState(false)
-  const [isExtraordinary, setIsExtraordinary] = useState(false)
+  const [isGift, setIsGift] = useState(template?.isGift ?? false)
+  const [isExtraordinary, setIsExtraordinary] = useState(template?.isExtraordinary ?? false)
   const [saving, setSaving] = useState(false)
 
   // Currency
