@@ -84,7 +84,7 @@ export default function Settings() {
     await addRecurring({
       type: recType, amount: parsed, categoryId: recCatId,
       note: recNote.trim() || undefined, frequency: recFreq,
-      startDate: new Date(recStart).getTime(),
+      startDate: (() => { const [y, m, d] = recStart.split('-').map(Number); return new Date(y, m - 1, d).getTime() })(),
       isGift: false, isExtraordinary: false,
     })
     setRecAmount(''); setRecCatId(''); setRecNote('')

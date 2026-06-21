@@ -68,7 +68,7 @@ export default function AddTransactionModal({ onClose }: Props) {
       currency: isForeign ? currency : undefined,
       exchangeRate: isForeign ? effectiveRate : undefined,
       amountInBase: isForeign ? amountInBase : undefined,
-      date: new Date(date).getTime(),
+      date: (() => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getTime() })(),
       categoryId,
       paymentMethodId: paymentMethodId || undefined,
       memberId: memberId || undefined,
