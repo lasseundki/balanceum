@@ -119,7 +119,11 @@ export function useTransactionActions() {
     if (!user) return
     await deleteDoc(userDoc(user.uid, 'transactions', id))
   }, [user])
-  return { addTransaction, deleteTransaction }
+  const updateTransaction = useCallback(async (id: string, data: Record<string, unknown>) => {
+    if (!user) return
+    await updateDoc(userDoc(user.uid, 'transactions', id), data)
+  }, [user])
+  return { addTransaction, deleteTransaction, updateTransaction }
 }
 
 export function useCategoryActions() {

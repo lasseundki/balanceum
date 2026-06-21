@@ -1,41 +1,51 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Star, Zap, ChevronDown, AlertCircle } from 'lucide-react'
 import { format } from 'date-fns'
+import { deleteField } from 'firebase/firestore'
 import { useTranslation } from 'react-i18next'
 import { useCategories, usePaymentMethods, useMembers, useTransactionActions } from '../../hooks/useFirestore'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { CURRENCIES, fetchExchangeRate } from '../../lib/currency'
 import { fmtCurrency } from '../../lib/formatters'
 import { saveNoteToHistory, getNoteHistory } from '../../lib/noteHistory'
-import type { TransactionType } from '../../types'
+import type { Transaction, TransactionType } from '../../types'
+
+function formatAmt(raw: string): string {
+  const stripped = raw.replace(/\./g, '')
+  const valid = stripped.replace(/[^\d,]/g, '')
+  const parts = valid.split(',')
+  const int = (parts[0] || '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return parts.length > 1 ? `${int},${parts[1]}` : int
+}
 
 interface Props {
+  tx: Transaction
   onClose: () => void
 }
 
-export default function AddTransactionModal({ onClose }: Props) {
+export default function EditTransactionModal({ tx, onClose }: Props) {
   const { t } = useTranslation()
   const { baseCurrency } = useCurrency()
   const categories = useCategories()
   const paymentMethods = usePaymentMethods()
   const members = useMembers()
-  const { addTransaction } = useTransactionActions()
+  const { updateTransaction } = useTransactionActions()
 
-  const [type, setType] = useState<TransactionType>('expense')
-  const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [categoryId, setCategoryId] = useState('')
-  const [paymentMethodId, setPaymentMethodId] = useState('')
-  const [memberId, setMemberId] = useState('')
-  const [note, setNote] = useState('')
+  const [type, setType] = useState<TransactionType>(tx.type)
+  const [amount, setAmount] = useState(() => formatAmt(String(tx.amount).replace('.', ',')))
+  const [date, setDate] = useState(format(new Date(tx.date), 'yyyy-MM-dd'))
+  const [categoryId, setCategoryId] = useState(tx.categoryId)
+  const [paymentMethodId, setPaymentMethodId] = useState(tx.paymentMethodId ?? '')
+  const [memberId, setMemberId] = useState(tx.memberId ?? '')
+  const [note, setNote] = useState(tx.note ?? '')
   const [noteSuggestions, setNoteSuggestions] = useState<string[]>([])
-  const [isGift, setIsGift] = useState(false)
-  const [isExtraordinary, setIsExtraordinary] = useState(false)
+  const [isGift, setIsGift] = useState(tx.isGift)
+  const [isExtraordinary, setIsExtraordinary] = useState(tx.isExtraordinary)
   const [saving, setSaving] = useState(false)
 
   // Currency
-  const [currency, setCurrency] = useState(baseCurrency)
-  const [exchangeRate, setExchangeRate] = useState(1)
+  const [currency, setCurrency] = useState(tx.currency ?? baseCurrency)
+  const [exchangeRate, setExchangeRate] = useState(tx.exchangeRate ?? 1)
   const [rateLoading, setRateLoading] = useState(false)
   const [rateError, setRateError] = useState(false)
   const [manualRate, setManualRate] = useState('')
@@ -44,19 +54,15 @@ export default function AddTransactionModal({ onClose }: Props) {
 
   const isForeign = currency !== baseCurrency
   const parsedAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.')) || 0
-
-  function formatAmountInput(raw: string): string {
-    const stripped = raw.replace(/\./g, '')
-    const onlyValid = stripped.replace(/[^\d,]/g, '')
-    const parts = onlyValid.split(',')
-    const intFormatted = (parts[0] || '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-    return parts.length > 1 ? `${intFormatted},${parts[1]}` : intFormatted
-  }
   const effectiveRate = rateError && manualRate ? parseFloat(manualRate.replace(',', '.')) : exchangeRate
   const amountInBase = isForeign ? parsedAmount * effectiveRate : parsedAmount
 
   useEffect(() => {
     if (!isForeign) { setExchangeRate(1); setRateError(false); return }
+    if (currency === tx.currency && tx.exchangeRate) {
+      setExchangeRate(tx.exchangeRate)
+      return
+    }
     setRateLoading(true)
     setRateError(false)
     rateAbort.current?.abort()
@@ -64,7 +70,7 @@ export default function AddTransactionModal({ onClose }: Props) {
     fetchExchangeRate(currency, baseCurrency)
       .then(rate => { setExchangeRate(rate); setRateLoading(false) })
       .catch(() => { setRateError(true); setRateLoading(false) })
-  }, [currency, baseCurrency, isForeign])
+  }, [currency, baseCurrency, isForeign, tx.currency, tx.exchangeRate])
 
   const filteredCats = categories.filter(c => c.type === type || c.type === 'both')
 
@@ -73,20 +79,19 @@ export default function AddTransactionModal({ onClose }: Props) {
     if (isForeign && rateError && !manualRate) return
     setSaving(true)
     if (note.trim()) saveNoteToHistory(note.trim())
-    await addTransaction({
+    await updateTransaction(tx.id, {
       type,
       amount: parsedAmount,
-      currency: isForeign ? currency : undefined,
-      exchangeRate: isForeign ? effectiveRate : undefined,
-      amountInBase: isForeign ? amountInBase : undefined,
+      currency: isForeign ? currency : deleteField(),
+      exchangeRate: isForeign ? effectiveRate : deleteField(),
+      amountInBase: isForeign ? amountInBase : deleteField(),
       date: (() => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getTime() })(),
       categoryId,
-      paymentMethodId: paymentMethodId || undefined,
-      memberId: memberId || undefined,
-      note: note.trim() || undefined,
+      paymentMethodId: paymentMethodId || deleteField(),
+      memberId: memberId || deleteField(),
+      note: note.trim() || deleteField(),
       isGift,
       isExtraordinary,
-      createdAt: Date.now(),
     })
     onClose()
   }
@@ -97,7 +102,7 @@ export default function AddTransactionModal({ onClose }: Props) {
       <div className="relative w-full bg-surface rounded-t-xl shadow-xl max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
-          <h2 className="font-heading text-lg font-semibold text-text">{t('transaction.title')}</h2>
+          <h2 className="font-heading text-lg font-semibold text-text">{t('transaction.editTitle')}</h2>
           <button onClick={onClose} className="p-1.5 rounded-md text-text-muted hover:bg-bg-muted transition-colors">
             <X size={20} />
           </button>
@@ -128,10 +133,9 @@ export default function AddTransactionModal({ onClose }: Props) {
                   type="text"
                   inputMode="decimal"
                   value={amount}
-                  onChange={e => setAmount(formatAmountInput(e.target.value))}
+                  onChange={e => setAmount(formatAmt(e.target.value))}
                   placeholder="0,00"
                   className="w-full border border-border rounded-md px-3 py-2.5 text-2xl font-bold text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
-                  autoFocus
                 />
               </div>
               <button
@@ -143,12 +147,9 @@ export default function AddTransactionModal({ onClose }: Props) {
               </button>
             </div>
 
-            {/* Exchange Rate Info */}
             {isForeign && (
               <div className="mt-2 px-3 py-2 bg-info-light rounded-md text-xs space-y-1">
-                {rateLoading && (
-                  <p className="text-text-secondary">{t('currency.loading')}</p>
-                )}
+                {rateLoading && <p className="text-text-secondary">{t('currency.loading')}</p>}
                 {!rateLoading && !rateError && (
                   <>
                     <p className="text-text-secondary">
@@ -287,7 +288,7 @@ export default function AddTransactionModal({ onClose }: Props) {
             </button>
           </div>
 
-          {/* Note */}
+          {/* Note with autocomplete */}
           <div className="relative">
             <label className="block text-sm font-medium text-text mb-1.5">{t('common.note')}</label>
             <input

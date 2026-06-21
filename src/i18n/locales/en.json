@@ -20,7 +20,8 @@
     "extraordinary": "Extraordinary", "gift": "Gift",
     "notePlaceholder": "Short description...", "none": "None",
     "noBookings": "No transactions found",
-    "search": "Search...", "unknown": "Transaction"
+    "search": "Search...", "unknown": "Transaction",
+    "editTitle": "Edit Transaction"
   },
   "analytics": {
     "monthlyOverview": "Monthly Overview", "clickHint": "Tap a month for details",
@@ -73,6 +74,7 @@
     "forgotPassword": "Forgot password?", "backToLogin": "Back to login",
     "emailSent": "Email sent",
     "emailSentDesc": "We've sent a reset link to {{email}}. Also check your spam folder.",
+    "rememberMe": "Remember me",
     "wrongCredentials": "Incorrect email or password.",
     "emailInUse": "This email is already registered.",
     "registerFailed": "Registration failed. Please try again.",

@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories, useTransactionActions } from '../hooks/useFirestore'
+import EditTransactionModal from '../components/modals/EditTransactionModal'
+import type { Transaction } from '../types'
 import { fmt, fmtMonthYear, fmtCurrency } from '../lib/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount } from '../lib/currency'
@@ -23,6 +25,7 @@ export default function Transactions() {
   const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all')
   const [filterCurrency, setFilterCurrency] = useState<string>('')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
 
@@ -75,6 +78,7 @@ export default function Transactions() {
   }
 
   return (
+    <>
     <div className="px-4 pt-4 pb-nav">
       {/* Month Nav */}
       <div className="flex items-center justify-between mb-4">
@@ -211,7 +215,10 @@ export default function Transactions() {
                     return (
                       <div key={tx.id}>
                         {i > 0 && <div className="h-px bg-border mx-4" />}
-                        <div className="flex items-center gap-3 px-4 py-3">
+                        <div
+                          className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-bg-subtle transition-colors"
+                          onClick={() => setEditingTx(tx)}
+                        >
                           <span className="text-xl">{cat?.icon ?? '📌'}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-text truncate">
@@ -238,9 +245,9 @@ export default function Transactions() {
                             </span>
                           </div>
                           <button
-                            onClick={() => handleDelete(tx.id)}
+                            onClick={e => { e.stopPropagation(); handleDelete(tx.id) }}
                             disabled={deleting === tx.id}
-                            className="p-1.5 rounded-md text-text-muted hover:text-error hover:bg-error-light transition-colors"
+                            className="p-1.5 rounded-md text-text-muted hover:text-error hover:bg-error-light transition-colors flex-shrink-0"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -255,5 +262,8 @@ export default function Transactions() {
         </div>
       )}
     </div>
+    {editingTx && <EditTransactionModal tx={editingTx} onClose={() => setEditingTx(null)} />}
+    </>
   )
 }
+

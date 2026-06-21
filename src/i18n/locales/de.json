@@ -20,7 +20,8 @@
     "extraordinary": "Außergewöhnlich", "gift": "Geschenk",
     "notePlaceholder": "Kurze Beschreibung...", "none": "Keine",
     "noBookings": "Keine Transaktionen gefunden",
-    "search": "Suchen...", "unknown": "Buchung"
+    "search": "Suchen...", "unknown": "Buchung",
+    "editTitle": "Buchung bearbeiten"
   },
   "analytics": {
     "monthlyOverview": "Monatsübersicht", "clickHint": "Tippe auf einen Monat für Details",
@@ -73,6 +74,7 @@
     "forgotPassword": "Passwort vergessen?", "backToLogin": "Zurück zum Login",
     "emailSent": "E-Mail gesendet",
     "emailSentDesc": "Wir haben dir einen Link an {{email}} geschickt. Überprüfe auch deinen Spam-Ordner.",
+    "rememberMe": "Angemeldet bleiben",
     "wrongCredentials": "E-Mail oder Passwort falsch.",
     "emailInUse": "Diese E-Mail ist bereits registriert.",
     "registerFailed": "Registrierung fehlgeschlagen. Bitte erneut versuchen.",

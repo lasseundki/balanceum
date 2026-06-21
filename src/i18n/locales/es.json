@@ -20,7 +20,8 @@
     "extraordinary": "Extraordinario", "gift": "Regalo",
     "notePlaceholder": "Breve descripción...", "none": "Ninguno",
     "noBookings": "No se encontraron transacciones",
-    "search": "Buscar...", "unknown": "Transacción"
+    "search": "Buscar...", "unknown": "Transacción",
+    "editTitle": "Editar transacción"
   },
   "analytics": {
     "monthlyOverview": "Resumen mensual", "clickHint": "Toca un mes para ver detalles",
@@ -73,6 +74,7 @@
     "forgotPassword": "¿Olvidaste tu contraseña?", "backToLogin": "Volver al inicio de sesión",
     "emailSent": "Correo enviado",
     "emailSentDesc": "Te enviamos un enlace a {{email}}. Revisa también tu carpeta de spam.",
+    "rememberMe": "Recordarme",
     "wrongCredentials": "Correo o contraseña incorrectos.",
     "emailInUse": "Este correo ya está registrado.",
     "registerFailed": "Registro fallido. Por favor intenta de nuevo.",
