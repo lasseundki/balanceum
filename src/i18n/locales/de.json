@@ -5,7 +5,7 @@
     "save": "Speichern", "saving": "Speichern...", "add": "Hinzufügen",
     "cancel": "Abbrechen", "back": "← Zurück", "all": "Alle",
     "loading": "Laden...", "amount": "Betrag", "date": "Datum",
-    "note": "Notiz", "category": "Kategorie", "name": "Name", "none": "Keine"
+    "note": "Notiz", "category": "Kategorie", "name": "Name", "none": "Keine", "apply": "Anwenden"
   },
   "dashboard": {
     "welcomeBack": "Willkommen zurück", "topExpenses": "Top Ausgaben",

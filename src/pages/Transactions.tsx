@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories } from '../hooks/useFirestore'
 import TransactionDetailSheet from '../components/modals/TransactionDetailSheet'
@@ -27,6 +27,13 @@ export default function Transactions() {
   const [filterCurrency, setFilterCurrency] = useState<string>('')
   const [filterSpecial, setFilterSpecial] = useState<SpecialFilter>('all')
   const [viewingTx, setViewingTx] = useState<Transaction | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Pending filter state (inside sheet before "Anwenden")
+  const [pendingType, setPendingType] = useState<'all' | 'expense' | 'income'>('all')
+  const [pendingSpecial, setPendingSpecial] = useState<SpecialFilter>('all')
+  const [pendingCatId, setPendingCatId] = useState('')
+  const [pendingCurrency, setPendingCurrency] = useState('')
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
 
@@ -84,6 +91,46 @@ export default function Transactions() {
     { key: 'gifts', label: t('transaction.filterGifts') },
   ]
 
+  const activeFilterCount = (filterType !== 'all' ? 1 : 0)
+    + (filterSpecial !== 'all' ? 1 : 0)
+    + (filterCatId ? 1 : 0)
+    + (filterCurrency ? 1 : 0)
+
+  function openFilters() {
+    setPendingType(filterType)
+    setPendingSpecial(filterSpecial)
+    setPendingCatId(filterCatId)
+    setPendingCurrency(filterCurrency)
+    setShowFilters(true)
+  }
+
+  function applyFilters() {
+    setFilterType(pendingType)
+    setFilterSpecial(pendingSpecial)
+    setFilterCatId(pendingCatId)
+    setFilterCurrency(pendingCurrency)
+    setShowFilters(false)
+  }
+
+  function resetFilters() {
+    setPendingType('all')
+    setPendingSpecial('all')
+    setPendingCatId('')
+    setPendingCurrency('')
+  }
+
+  function clearAll() {
+    setFilterType('all')
+    setFilterSpecial('all')
+    setFilterCatId('')
+    setFilterCurrency('')
+  }
+
+  const pillCls = (active: boolean) =>
+    `px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex-shrink-0 ${
+      active ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+    }`
+
   return (
     <>
     <div className="px-4 pt-4 pb-nav">
@@ -112,102 +159,64 @@ export default function Transactions() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={t('transaction.search')}
-          className="w-full pl-9 pr-3 py-2.5 text-sm border border-border rounded-md bg-surface text-text focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
-        />
-      </div>
-
-      {/* Type filter */}
-      <div className="flex gap-2 mb-3">
-        {(['all', 'expense', 'income'] as const).map(type => (
-          <button
-            key={type}
-            onClick={() => setFilterType(type)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterType === type ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-            }`}
-          >
-            {type === 'all' ? t('common.all') : type === 'expense' ? t('common.expense') : t('common.income')}
-          </button>
-        ))}
-      </div>
-
-      {/* Special filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-3 scrollbar-hide">
-        {specialFilters.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilterSpecial(f.key)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterSpecial === f.key ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Currency filter */}
-      {usedForeignCurrencies.length > 0 && (
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => setFilterCurrency('')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              !filterCurrency ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-            }`}
-          >
-            {t('currency.allCurrencies')}
-          </button>
-          <button
-            onClick={() => setFilterCurrency(baseCurrency)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterCurrency === baseCurrency ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-            }`}
-          >
-            {baseCurrency}
-          </button>
-          {usedForeignCurrencies.map(c => (
-            <button
-              key={c}
-              onClick={() => setFilterCurrency(c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                filterCurrency === c ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+      {/* Search + Filter row */}
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('transaction.search')}
+            className="w-full pl-9 pr-3 py-2.5 text-sm border border-border rounded-md bg-surface text-text focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
+          />
         </div>
-      )}
-
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
         <button
-          onClick={() => setFilterCatId('')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-            !filterCatId ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+          onClick={openFilters}
+          className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-md border text-sm font-medium transition-colors flex-shrink-0 ${
+            activeFilterCount > 0
+              ? 'bg-accent text-text-inverse border-accent'
+              : 'bg-surface border-border text-text-secondary hover:bg-bg-subtle'
           }`}
         >
-          {t('common.all')}
+          <SlidersHorizontal size={16} />
+          {activeFilterCount > 0 && (
+            <span className="text-xs font-bold">{activeFilterCount}</span>
+          )}
+          {activeFilterCount === 0 && <span>Filter</span>}
         </button>
-        {categories.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setFilterCatId(filterCatId === cat.id ? '' : cat.id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filterCatId === cat.id ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-            }`}
-          >
-            <span>{cat.icon}</span>{cat.name}
-          </button>
-        ))}
       </div>
+
+      {/* Active filter summary chips (read-only, tap to clear all) */}
+      {activeFilterCount > 0 && (
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
+          {filterType !== 'all' && (
+            <span className="flex-shrink-0 px-2.5 py-1 bg-accent-light text-accent-dark rounded-full text-xs font-medium border border-accent">
+              {filterType === 'expense' ? t('common.expense') : t('common.income')}
+            </span>
+          )}
+          {filterSpecial !== 'all' && (
+            <span className="flex-shrink-0 px-2.5 py-1 bg-accent-light text-accent-dark rounded-full text-xs font-medium border border-accent">
+              {specialFilters.find(f => f.key === filterSpecial)?.label}
+            </span>
+          )}
+          {filterCatId && (
+            <span className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 bg-accent-light text-accent-dark rounded-full text-xs font-medium border border-accent">
+              <span>{catMap[filterCatId]?.icon}</span>{catMap[filterCatId]?.name}
+            </span>
+          )}
+          {filterCurrency && (
+            <span className="flex-shrink-0 px-2.5 py-1 bg-accent-light text-accent-dark rounded-full text-xs font-medium border border-accent">
+              {filterCurrency}
+            </span>
+          )}
+          <button
+            onClick={clearAll}
+            className="flex-shrink-0 px-2.5 py-1 text-xs text-text-muted border border-border rounded-full hover:bg-bg-muted transition-colors"
+          >
+            ✕ {t('common.all')}
+          </button>
+        </div>
+      )}
 
       {/* Transactions grouped by date */}
       {loading ? (
@@ -282,6 +291,108 @@ export default function Transactions() {
         </div>
       )}
     </div>
+
+    {/* Filter Sheet */}
+    {showFilters && (
+      <div className="fixed inset-0 z-50 flex items-end">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFilters(false)} />
+        <div className="relative w-full bg-surface rounded-t-xl shadow-xl max-h-[85vh] overflow-y-auto">
+          <div className="sticky top-0 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
+            <h3 className="font-heading text-base font-semibold text-text">Filter</h3>
+            <button
+              onClick={resetFilters}
+              className="text-xs text-accent font-medium px-2 py-1 rounded hover:bg-accent-light transition-colors"
+            >
+              {t('common.all')} {t('transaction.filterAll').toLowerCase()}
+            </button>
+          </div>
+
+          <div className="p-4 space-y-5">
+            {/* Type */}
+            <div>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">
+                {t('common.expense')} / {t('common.income')}
+              </p>
+              <div className="flex gap-2">
+                {(['all', 'expense', 'income'] as const).map(tp => (
+                  <button key={tp} onClick={() => setPendingType(tp)} className={pillCls(pendingType === tp)}>
+                    {tp === 'all' ? t('common.all') : tp === 'expense' ? t('common.expense') : t('common.income')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Special */}
+            <div>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">
+                {t('transaction.filterFixed')} / {t('transaction.filterExtraordinary')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {specialFilters.map(f => (
+                  <button key={f.key} onClick={() => setPendingSpecial(f.key)} className={pillCls(pendingSpecial === f.key)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Category */}
+            <div>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">{t('common.category')}</p>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setPendingCatId('')} className={pillCls(!pendingCatId)}>
+                  {t('common.all')}
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setPendingCatId(pendingCatId === cat.id ? '' : cat.id)}
+                    className={pillCls(pendingCatId === cat.id)}
+                  >
+                    <span className="mr-1">{cat.icon}</span>{cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Currency (only if foreign txs exist) */}
+            {usedForeignCurrencies.length > 0 && (
+              <>
+                <div className="h-px bg-border" />
+                <div>
+                  <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2.5">{t('currency.allCurrencies')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setPendingCurrency('')} className={pillCls(!pendingCurrency)}>
+                      {t('currency.allCurrencies')}
+                    </button>
+                    <button onClick={() => setPendingCurrency(baseCurrency)} className={pillCls(pendingCurrency === baseCurrency)}>
+                      {baseCurrency}
+                    </button>
+                    {usedForeignCurrencies.map(c => (
+                      <button key={c} onClick={() => setPendingCurrency(pendingCurrency === c ? '' : c)} className={pillCls(pendingCurrency === c)}>
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={applyFilters}
+              className="w-full bg-accent text-text-inverse py-3 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors"
+            >
+              {t('common.apply')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {viewingTx && <TransactionDetailSheet tx={viewingTx} onClose={() => setViewingTx(null)} />}
     </>
   )

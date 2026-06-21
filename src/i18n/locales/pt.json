@@ -5,7 +5,7 @@
     "save": "Salvar", "saving": "Salvando...", "add": "Adicionar",
     "cancel": "Cancelar", "back": "← Voltar", "all": "Todos",
     "loading": "Carregando...", "amount": "Valor", "date": "Data",
-    "note": "Nota", "category": "Categoria", "name": "Nome", "none": "Nenhum"
+    "note": "Nota", "category": "Categoria", "name": "Nome", "none": "Nenhum", "apply": "Aplicar"
   },
   "dashboard": {
     "welcomeBack": "Bem-vindo de volta", "topExpenses": "Principais despesas",

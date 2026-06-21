@@ -11,7 +11,62 @@ import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
 const CHART_COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4', '#B87B72', '#6E9E8A']
 
-type AnalyticsTab = 'year' | 'category'
+type AnalyticsTab = 'year' | 'month' | 'category'
+
+function CategoryBreakdown({
+  txs,
+  catMap,
+  loading,
+  noDataLabel,
+}: {
+  txs: { categoryId: string; type: string; amount: number; currency?: string; exchangeRate?: number; amountInBase?: number }[]
+  catMap: Record<string, { icon: string; name: string }>
+  loading: boolean
+  noDataLabel: string
+}) {
+  const totals = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const t of txs) {
+      if (t.type !== 'expense') continue
+      const eff = (t as { amountInBase?: number; amount: number }).amountInBase ?? t.amount
+      map[t.categoryId] = (map[t.categoryId] ?? 0) + eff
+    }
+    return Object.entries(map).sort(([, a], [, b]) => b - a)
+  }, [txs])
+
+  const total = totals.reduce((s, [, v]) => s + v, 0)
+
+  if (loading) return <div className="text-center py-6 text-text-muted text-sm">…</div>
+  if (totals.length === 0) return (
+    <div className="text-center py-8 text-text-muted">
+      <p className="text-3xl mb-2">📊</p>
+      <p className="text-sm">{noDataLabel}</p>
+    </div>
+  )
+
+  return (
+    <div className="space-y-3">
+      {totals.map(([id, val], idx) => {
+        const cat = catMap[id]
+        const pct = total > 0 ? (val / total) * 100 : 0
+        const clr = CHART_COLORS[idx % CHART_COLORS.length]
+        return (
+          <div key={id}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg flex-shrink-0">{cat?.icon ?? '📌'}</span>
+              <span className="flex-1 text-sm font-medium text-text truncate min-w-0">{cat?.name ?? '?'}</span>
+              <span className="text-xs text-text-muted flex-shrink-0">{pct.toFixed(0)}%</span>
+              <span className="text-sm font-semibold text-text flex-shrink-0">{fmt(val)}</span>
+            </div>
+            <div className="ml-7 h-1.5 bg-bg-muted rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, background: clr }} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function Analytics() {
   const { t, i18n } = useTranslation()
@@ -24,11 +79,16 @@ export default function Analytics() {
   const [excludeFixed, setExcludeFixed] = useState(false)
   const [tab, setTab] = useState<AnalyticsTab>('year')
   const [selectedCatId, setSelectedCatId] = useState('')
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
 
   const MONTHS = useMemo(() =>
     Array.from({ length: 12 }, (_, m) => format(new Date(2024, m, 1), 'LLL', { locale: dateLocale })),
+    [dateLocale]
+  )
+  const MONTHS_LONG = useMemo(() =>
+    Array.from({ length: 12 }, (_, m) => format(new Date(2024, m, 1), 'LLLL', { locale: dateLocale })),
     [dateLocale]
   )
 
@@ -65,32 +125,8 @@ export default function Analytics() {
   const totalIncome = monthData.reduce((s, m) => s + m.income, 0)
   const totalExpense = monthData.reduce((s, m) => s + m.expense, 0)
   const extraordinary = baseTxs.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
-
   const avgExpense = totalExpense / 12
   const outliers = monthData.filter(m => m.expense > avgExpense * 1.5 && m.expense > 0)
-
-  const filteredTxs = selectedMonth !== null
-    ? baseTxs.filter(t => new Date(t.date).getMonth() === selectedMonth)
-    : baseTxs
-
-  const catTotals = useMemo(() =>
-    filteredTxs
-      .filter(t => t.type === 'expense')
-      .reduce<Record<string, number>>((acc, t) => {
-        acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
-        return acc
-      }, {}),
-    [filteredTxs]
-  )
-
-  const catList = useMemo(() =>
-    Object.entries(catTotals)
-      .map(([id, total]) => ({ id, cat: catMap[id], total }))
-      .sort((a, b) => b.total - a.total),
-    [catTotals, catMap]
-  )
-
-  const catExpenseTotal = catList.reduce((s, c) => s + c.total, 0)
 
   const outlierDetails = useMemo(() =>
     outliers.map(o => {
@@ -109,6 +145,10 @@ export default function Analytics() {
     [outliers, transactions, catMap, MONTHS]
   )
 
+  const filteredTxs = selectedMonth !== null
+    ? baseTxs.filter(t => new Date(t.date).getMonth() === selectedMonth)
+    : baseTxs
+
   const currencyBreakdown = useMemo(() => {
     const foreign = baseTxs.filter(t => t.type === 'expense' && t.currency && t.currency !== baseCurrency)
     const map: Record<string, { inBase: number; original: number }> = {}
@@ -120,7 +160,25 @@ export default function Analytics() {
     return Object.entries(map).sort(([, a], [, b]) => b.inBase - a.inBase)
   }, [baseTxs, baseCurrency])
 
-  // Category-centric view
+  // Month tab data
+  const viewMonthTxs = useMemo(() =>
+    baseTxs.filter(t => new Date(t.date).getMonth() === viewMonth),
+    [baseTxs, viewMonth]
+  )
+  const viewIncome = viewMonthTxs.filter(t => t.type === 'income').reduce((s, t) => s + effectiveAmount(t), 0)
+  const viewExpense = viewMonthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + effectiveAmount(t), 0)
+
+  const dayData = useMemo(() => {
+    const daysInMonth = new Date(year, viewMonth + 1, 0).getDate()
+    return Array.from({ length: daysInMonth }, (_, d) => {
+      const day = d + 1
+      const dayTxs = viewMonthTxs.filter(t => new Date(t.date).getDate() === day)
+      const expense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + effectiveAmount(t), 0)
+      return { day, expense }
+    })
+  }, [viewMonthTxs, year, viewMonth])
+
+  // Category tab data
   const catMonthData = useMemo(() => {
     if (!selectedCatId) return []
     return MONTHS.map((name, m) => {
@@ -133,12 +191,16 @@ export default function Analytics() {
 
   const catTxList = useMemo(() => {
     if (!selectedCatId) return []
-    return transactions
-      .filter(t => t.categoryId === selectedCatId)
-      .sort((a, b) => b.date - a.date)
+    return transactions.filter(t => t.categoryId === selectedCatId).sort((a, b) => b.date - a.date)
   }, [selectedCatId, transactions])
 
   const periodLabel = selectedMonth !== null ? MONTHS[selectedMonth] : t('analytics.total')
+
+  const TABS: { key: AnalyticsTab; label: string }[] = [
+    { key: 'year', label: t('analytics.yearView') },
+    { key: 'month', label: t('analytics.monthlyOverview') },
+    { key: 'category', label: t('analytics.categoryView') },
+  ]
 
   return (
     <div className="px-4 pt-4 pb-nav space-y-4">
@@ -155,89 +217,20 @@ export default function Analytics() {
 
       {/* Tab toggle */}
       <div className="flex bg-bg-muted rounded-lg p-1 gap-1">
-        {(['year', 'category'] as AnalyticsTab[]).map(t2 => (
+        {TABS.map(tb => (
           <button
-            key={t2}
-            onClick={() => setTab(t2)}
-            className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${tab === t2 ? 'bg-surface text-text shadow-sm' : 'text-text-secondary'}`}
+            key={tb.key}
+            onClick={() => setTab(tb.key)}
+            className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${tab === tb.key ? 'bg-surface text-text shadow-sm' : 'text-text-secondary'}`}
           >
-            {t2 === 'year' ? t('analytics.yearView') : t('analytics.categoryView')}
+            {tb.label}
           </button>
         ))}
       </div>
 
-      {tab === 'category' && (
-        <div className="space-y-4">
-          {/* Category selector */}
-          <div className="flex flex-wrap gap-2">
-            {categories.filter(c => c.type === 'expense' || c.type === 'both').map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCatId(selectedCatId === cat.id ? '' : cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  selectedCatId === cat.id ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
-                }`}
-              >
-                <span>{cat.icon}</span>{cat.name}
-              </button>
-            ))}
-          </div>
-
-          {!selectedCatId ? (
-            <div className="text-center py-10 text-text-muted">
-              <p className="text-3xl mb-2">📊</p>
-              <p className="text-sm">{t('analytics.selectCategory')}</p>
-            </div>
-          ) : (
-            <>
-              {/* Category bar chart */}
-              <div className="bg-surface border border-border rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl">{catMap[selectedCatId]?.icon}</span>
-                  <h2 className="font-heading text-base font-semibold text-text">{catMap[selectedCatId]?.name}</h2>
-                </div>
-                <ResponsiveContainer width="100%" height={140}>
-                  <BarChart data={catMonthData}>
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#A09890' }} axisLine={false} tickLine={false} />
-                    <YAxis hide />
-                    <Tooltip
-                      formatter={(val) => fmt(Number(val))}
-                      contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }}
-                    />
-                    <Bar dataKey="total" fill="#B87B72" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Transaction list */}
-              <div className="bg-surface border border-border rounded-xl overflow-hidden">
-                {catTxList.length === 0 ? (
-                  <p className="text-sm text-text-muted text-center py-8">{t('analytics.noCategoryData')}</p>
-                ) : (
-                  catTxList.map((tx, i) => (
-                    <div key={tx.id}>
-                      {i > 0 && <div className="h-px bg-border mx-4" />}
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-text truncate">{tx.note || catMap[tx.categoryId]?.name || '?'}</p>
-                          <p className="text-xs text-text-muted">{fmtDateShort(tx.date)}</p>
-                        </div>
-                        <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
-                          {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
+      {/* ═══ YEAR TAB ═══ */}
       {tab === 'year' && (
         <>
-          {/* Yearly Totals */}
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: t('common.income'), val: totalIncome, color: 'text-success' },
@@ -251,7 +244,6 @@ export default function Analytics() {
             ))}
           </div>
 
-          {/* Fixed costs toggle + card */}
           {fixedTxs.length > 0 && (
             <div className="space-y-2">
               <button
@@ -272,7 +264,6 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Outlier Alert */}
           {outlierDetails.length > 0 && (
             <div className="bg-warning-light border border-warning rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
@@ -294,7 +285,6 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Extraordinary */}
           {extraordinary > 0 && (
             <div className="bg-surface border border-border rounded-lg p-3 flex justify-between items-center">
               <span className="text-sm text-text-secondary">{t('analytics.extraordinary')}</span>
@@ -302,7 +292,7 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Monthly Bar Chart */}
+          {/* Bar Chart */}
           <div className="bg-surface border border-border rounded-xl p-4">
             <div className="flex justify-between items-center mb-1">
               <h2 className="font-heading text-base font-semibold text-text">{t('analytics.monthlyOverview')}</h2>
@@ -310,38 +300,31 @@ export default function Analytics() {
                 <button onClick={() => setSelectedMonth(null)} className="text-xs text-accent font-medium">{t('analytics.reset')}</button>
               )}
             </div>
-            <p className="text-xs text-text-muted mb-3 font-heading italic">{t('analytics.clickHint')}</p>
+            <p className="text-xs text-text-muted mb-3 italic">{t('analytics.clickHint')}</p>
             {loading ? (
               <div className="h-40 flex items-center justify-center text-text-muted text-sm">{t('common.loading')}</div>
             ) : (
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={monthData} onClick={(e: unknown) => {
                   const ev = e as { activeTooltipIndex?: number }
                   if (ev?.activeTooltipIndex !== undefined) {
                     setSelectedMonth(prev => prev === ev.activeTooltipIndex ? null : ev.activeTooltipIndex!)
                   }
                 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#A09890' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#A09890' }} axisLine={false} tickLine={false} />
                   <YAxis hide />
-                  <Tooltip
-                    formatter={(val) => fmt(Number(val))}
-                    contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }}
-                  />
-                  <Bar dataKey="income" name={t('common.income')} fill="#7BA89B" radius={[4, 4, 0, 0]}
-                    opacity={selectedMonth !== null ? 0.5 : 1}
-                  />
-                  <Bar dataKey="expense" name={t('common.expense')} fill="#B87B72" radius={[4, 4, 0, 0]}
-                    opacity={selectedMonth !== null ? 0.5 : 1}
-                  />
+                  <Tooltip formatter={(val) => fmt(Number(val))} contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }} />
+                  <Bar dataKey="income" name={t('common.income')} fill="#7BA89B" radius={[3, 3, 0, 0]} opacity={selectedMonth !== null ? 0.45 : 1} />
+                  <Bar dataKey="expense" name={t('common.expense')} fill="#B87B72" radius={[3, 3, 0, 0]} opacity={selectedMonth !== null ? 0.45 : 1} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Monthly detail when selected */}
+          {/* Month detail when a bar is selected */}
           {selectedMonth !== null && (
-            <div className="bg-surface border border-accent rounded-xl p-4 space-y-2">
-              <h3 className="font-heading text-base font-semibold text-text">{MONTHS[selectedMonth]} · {t('analytics.monthlyDetail')}</h3>
+            <div className="bg-accent-light border border-accent rounded-xl p-4 space-y-3">
+              <h3 className="font-heading text-base font-semibold text-text">{MONTHS_LONG[selectedMonth]} · {t('analytics.monthlyDetail')}</h3>
               <div className="grid grid-cols-3 gap-2">
                 {(() => {
                   const d = monthData[selectedMonth]
@@ -367,39 +350,8 @@ export default function Analytics() {
                 <h2 className="font-heading text-base font-semibold text-text">{t('analytics.byCategory')}</h2>
                 <p className="text-xs text-text-muted mt-0.5">{periodLabel}</p>
               </div>
-              {catExpenseTotal > 0 && (
-                <span className="text-sm font-semibold text-error">{fmt(catExpenseTotal)}</span>
-              )}
             </div>
-
-            {loading ? (
-              <div className="text-center py-6 text-text-muted text-sm">{t('common.loading')}</div>
-            ) : catList.length === 0 ? (
-              <div className="text-center py-8 text-text-muted">
-                <p className="text-3xl mb-2">📊</p>
-                <p className="text-sm">{t('dashboard.noBookings')}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {catList.map(({ id, cat, total }, idx) => {
-                  const pct = catExpenseTotal > 0 ? (total / catExpenseTotal) * 100 : 0
-                  const clr = CHART_COLORS[idx % CHART_COLORS.length]
-                  return (
-                    <div key={id}>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="text-lg w-6 text-center flex-shrink-0">{cat?.icon ?? '📌'}</span>
-                        <span className="flex-1 text-sm font-medium text-text truncate">{cat?.name ?? '?'}</span>
-                        <span className="text-xs text-text-muted w-10 text-right">{pct.toFixed(0)}%</span>
-                        <span className="text-sm font-semibold text-text w-20 text-right">{fmt(total)}</span>
-                      </div>
-                      <div className="ml-9 h-1.5 bg-bg-muted rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, background: clr }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+            <CategoryBreakdown txs={filteredTxs} catMap={catMap} loading={loading} noDataLabel={t('dashboard.noBookings')} />
           </div>
 
           {/* Currency Breakdown */}
@@ -414,8 +366,7 @@ export default function Analytics() {
                     <div key={code}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="flex items-center gap-2 text-sm font-medium text-text">
-                          <span>{info.flag}</span>
-                          <span>{code}</span>
+                          <span>{info.flag}</span><span>{code}</span>
                         </span>
                         <div className="text-right">
                           <p className="text-xs text-text-muted">{fmtCurrency(original, code)}</p>
@@ -432,6 +383,140 @@ export default function Analytics() {
             </div>
           )}
         </>
+      )}
+
+      {/* ═══ MONTH TAB ═══ */}
+      {tab === 'month' && (
+        <div className="space-y-4">
+          {/* Month navigator */}
+          <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3">
+            <button
+              onClick={() => setViewMonth(m => m === 0 ? 11 : m - 1)}
+              className="p-1.5 rounded-md hover:bg-bg-muted text-text-secondary transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="font-heading text-base font-semibold text-text">{MONTHS_LONG[viewMonth]}</span>
+            <button
+              onClick={() => setViewMonth(m => m === 11 ? 0 : m + 1)}
+              className="p-1.5 rounded-md hover:bg-bg-muted text-text-secondary transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: t('common.income'), val: viewIncome, color: 'text-success' },
+              { label: t('common.expense'), val: viewExpense, color: 'text-error' },
+              { label: t('common.balance'), val: viewIncome - viewExpense, color: viewIncome - viewExpense >= 0 ? 'text-success' : 'text-error' },
+            ].map(({ label, val, color }) => (
+              <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center">
+                <p className="text-xs text-text-muted mb-0.5">{label}</p>
+                <p className={`text-sm font-bold ${color}`}>{fmtShort(val)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Day-by-day chart */}
+          {viewExpense > 0 && (
+            <div className="bg-surface border border-border rounded-xl p-4">
+              <h2 className="font-heading text-sm font-semibold text-text mb-3">
+                {t('analytics.extraordinary').replace('⚡ ', '')} — {t('common.expense')}
+              </h2>
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={dayData}>
+                  <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#A09890' }} axisLine={false} tickLine={false} interval={4} />
+                  <YAxis hide />
+                  <Tooltip formatter={(val) => fmt(Number(val))} contentStyle={{ fontSize: 11, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }} />
+                  <Bar dataKey="expense" name={t('common.expense')} fill="#B87B72" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Category breakdown for this month */}
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading text-base font-semibold text-text">{t('analytics.byCategory')}</h2>
+              {viewExpense > 0 && <span className="text-sm font-semibold text-error">{fmt(viewExpense)}</span>}
+            </div>
+            <CategoryBreakdown txs={viewMonthTxs} catMap={catMap} loading={loading} noDataLabel={t('dashboard.noBookings')} />
+          </div>
+
+          {/* Extraordinary this month */}
+          {viewMonthTxs.some(t => t.isExtraordinary) && (
+            <div className="bg-warning-light border border-warning rounded-lg px-4 py-3 flex justify-between items-center">
+              <span className="text-sm text-text-secondary">{t('analytics.extraordinary')}</span>
+              <span className="text-sm font-semibold text-warning">
+                {fmt(viewMonthTxs.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0))}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ CATEGORY TAB ═══ */}
+      {tab === 'category' && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {categories.filter(c => c.type === 'expense' || c.type === 'both').map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCatId(selectedCatId === cat.id ? '' : cat.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  selectedCatId === cat.id ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+                }`}
+              >
+                <span>{cat.icon}</span>{cat.name}
+              </button>
+            ))}
+          </div>
+
+          {!selectedCatId ? (
+            <div className="text-center py-10 text-text-muted">
+              <p className="text-3xl mb-2">📊</p>
+              <p className="text-sm">{t('analytics.selectCategory')}</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-surface border border-border rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">{catMap[selectedCatId]?.icon}</span>
+                  <h2 className="font-heading text-base font-semibold text-text">{catMap[selectedCatId]?.name}</h2>
+                </div>
+                <ResponsiveContainer width="100%" height={130}>
+                  <BarChart data={catMonthData}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#A09890' }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip formatter={(val) => fmt(Number(val))} contentStyle={{ fontSize: 11, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }} />
+                    <Bar dataKey="total" fill="#B87B72" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-surface border border-border rounded-xl overflow-hidden">
+                {catTxList.length === 0 ? (
+                  <p className="text-sm text-text-muted text-center py-8">{t('analytics.noCategoryData')}</p>
+                ) : catTxList.map((tx, i) => (
+                  <div key={tx.id}>
+                    {i > 0 && <div className="h-px bg-border mx-4" />}
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-text truncate">{tx.note || catMap[tx.categoryId]?.name || '?'}</p>
+                        <p className="text-xs text-text-muted">{fmtDateShort(tx.date)}</p>
+                      </div>
+                      <span className={`text-sm font-semibold flex-shrink-0 ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
+                        {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )

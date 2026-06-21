@@ -5,7 +5,7 @@
     "save": "Save", "saving": "Saving...", "add": "Add",
     "cancel": "Cancel", "back": "← Back", "all": "All",
     "loading": "Loading...", "amount": "Amount", "date": "Date",
-    "note": "Note", "category": "Category", "name": "Name", "none": "None"
+    "note": "Note", "category": "Category", "name": "Name", "none": "None", "apply": "Apply"
   },
   "dashboard": {
     "welcomeBack": "Welcome back", "topExpenses": "Top Expenses",
