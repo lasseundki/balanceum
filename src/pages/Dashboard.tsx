@@ -23,6 +23,7 @@ export default function Dashboard() {
 
   const [templateModal, setTemplateModal] = useState<Template | null>(null)
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [catView, setCatView] = useState<'compare' | 'budget'>('compare')
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -174,18 +175,56 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Top Categories + Budget bars */}
+      {/* Top Categories — compare vs budget views */}
       {topCats.length > 0 && (
         <div className="bg-surface border border-border rounded-xl p-4">
-          <h2 className="font-heading text-base font-semibold text-text mb-3">{t('dashboard.topExpenses')}</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading text-base font-semibold text-text">{t('dashboard.topExpenses')}</h2>
+            {/* View toggle: compare ↔ budget */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-text-muted">
+                {catView === 'compare' ? t('analytics.byCategory').split(' ')[0] : t('settings.budgets')}
+              </span>
+              <button
+                onClick={() => setCatView(v => v === 'compare' ? 'budget' : 'compare')}
+                className="p-1 rounded-md hover:bg-bg-muted text-text-secondary transition-colors"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
           <div className="space-y-3">
             {topCats.map(([catId, total]) => {
               const cat = catMap[catId]
               const budget = budgetMap[catId]
+
+              // Compare view: proportional to total expenses, single color
+              if (catView === 'compare') {
+                const pct = expense > 0 ? (total / expense) * 100 : 0
+                return (
+                  <div key={catId}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <span>{cat?.icon ?? '📌'}</span>
+                        <span className="text-sm font-medium text-text">{cat?.name ?? '?'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-text-muted">{pct.toFixed(0)}%</span>
+                        <span className="text-sm font-semibold text-text">{fmt(total)}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, background: '#7BA89B' }} />
+                    </div>
+                  </div>
+                )
+              }
+
+              // Budget view: percentage of budget limit, color-coded
               const pct = budget ? Math.min((total / budget) * 100, 100) : expense > 0 ? (total / expense) * 100 : 0
               const barColor = budget
                 ? pct >= 100 ? '#B87B72' : pct >= 80 ? '#C9A05A' : '#7BA89B'
-                : '#7BA89B'
+                : '#A09890'
               return (
                 <div key={catId}>
                   <div className="flex justify-between items-center mb-1">
@@ -197,7 +236,9 @@ export default function Dashboard() {
                       <span className="text-sm font-semibold text-text">{fmt(total)}</span>
                       {budget ? (
                         <span className="text-xs text-text-muted ml-1">/ {fmt(budget)}</span>
-                      ) : null}
+                      ) : (
+                        <span className="text-xs text-text-muted ml-1">—</span>
+                      )}
                     </div>
                   </div>
                   <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">

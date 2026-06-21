@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, Legend,
+} from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
@@ -9,9 +12,10 @@ import { fmt, fmtShort, fmtCurrency, fmtDateShort } from '../lib/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
-const CHART_COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4', '#B87B72', '#6E9E8A']
+const CHART_COLORS = ['#B87B72', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4', '#6E9E8A', '#C4A87A']
 
 type AnalyticsTab = 'year' | 'month' | 'category'
+type YearChartType = 'stacked' | 'line'
 
 function CategoryBreakdown({
   txs,
@@ -80,6 +84,7 @@ export default function Analytics() {
   const [tab, setTab] = useState<AnalyticsTab>('year')
   const [selectedCatId, setSelectedCatId] = useState('')
   const [viewMonth, setViewMonth] = useState(now.getMonth())
+  const [yearChartType, setYearChartType] = useState<YearChartType>('stacked')
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
 
@@ -104,12 +109,29 @@ export default function Analytics() {
     [transactions]
   )
 
+  // Top expense category IDs for stacked chart (sorted by annual total, max 8)
+  const expenseCatIds = useMemo(() => {
+    const totals: Record<string, number> = {}
+    for (const t of baseTxs) {
+      if (t.type !== 'expense') continue
+      totals[t.categoryId] = (totals[t.categoryId] ?? 0) + effectiveAmount(t)
+    }
+    return Object.entries(totals)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([id]) => id)
+  }, [baseTxs])
+
   const monthData = useMemo(() =>
     MONTHS.map((name, m) => {
       const txs = baseTxs.filter(t => new Date(t.date).getMonth() === m)
       const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + effectiveAmount(t), 0)
       const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + effectiveAmount(t), 0)
-      return { name, income, expense, balance: income - expense }
+      const catAmounts: Record<string, number> = {}
+      for (const tx of txs.filter(t => t.type === 'expense')) {
+        catAmounts[tx.categoryId] = (catAmounts[tx.categoryId] ?? 0) + effectiveAmount(tx)
+      }
+      return { name, income, expense, balance: income - expense, ...catAmounts }
     }),
     [baseTxs, MONTHS]
   )
@@ -202,6 +224,34 @@ export default function Analytics() {
     { key: 'category', label: t('analytics.categoryView') },
   ]
 
+  // Custom tooltip for stacked bar chart
+  const StackedTooltip = ({ active, payload, label }: { active?: boolean; payload?: { dataKey: string; value: number; fill: string; name: string }[]; label?: string }) => {
+    if (!active || !payload?.length) return null
+    const incomeEntry = payload.find(p => p.dataKey === 'income')
+    const catEntries = payload.filter(p => p.dataKey !== 'income' && p.value > 0)
+    const totalExp = catEntries.reduce((s, e) => s + e.value, 0)
+    return (
+      <div className="bg-surface border border-border rounded-lg p-2.5 shadow-lg text-xs space-y-1 max-w-[180px]">
+        <p className="font-semibold text-text mb-1.5">{label}</p>
+        {incomeEntry && incomeEntry.value > 0 && (
+          <p className="text-success font-medium">↑ {fmt(incomeEntry.value)}</p>
+        )}
+        {totalExp > 0 && (
+          <>
+            <p className="text-error font-medium">↓ {fmt(totalExp)}</p>
+            {catEntries.map(e => (
+              <p key={e.dataKey} className="flex items-center gap-1.5 text-text-secondary pl-1">
+                <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.fill }} />
+                <span className="truncate">{catMap[e.dataKey]?.name ?? e.name}</span>
+                <span className="ml-auto pl-2 font-medium text-text flex-shrink-0">{fmt(e.value)}</span>
+              </p>
+            ))}
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="px-4 pt-4 pb-nav space-y-4">
       {/* Year Nav */}
@@ -292,37 +342,104 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Bar Chart */}
+          {/* Year Chart — stacked bars or line chart */}
           <div className="bg-surface border border-border rounded-xl p-4">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="font-heading text-base font-semibold text-text">{t('analytics.monthlyOverview')}</h2>
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-heading text-base font-semibold text-text">{t('analytics.monthlyOverview')}</h2>
+                  {/* Chart type toggle */}
+                  <button
+                    onClick={() => setYearChartType(v => v === 'stacked' ? 'line' : 'stacked')}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md border border-border text-xs text-text-secondary hover:bg-bg-subtle transition-colors"
+                  >
+                    {yearChartType === 'stacked' ? '〜' : '▦'}
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+                {yearChartType === 'stacked' && (
+                  <p className="text-xs text-text-muted mt-0.5 italic">{t('analytics.clickHint')}</p>
+                )}
+              </div>
               {selectedMonth !== null && (
-                <button onClick={() => setSelectedMonth(null)} className="text-xs text-accent font-medium">{t('analytics.reset')}</button>
+                <button onClick={() => setSelectedMonth(null)} className="text-xs text-accent font-medium ml-2">{t('analytics.reset')}</button>
               )}
             </div>
-            <p className="text-xs text-text-muted mb-3 italic">{t('analytics.clickHint')}</p>
+
             {loading ? (
               <div className="h-40 flex items-center justify-center text-text-muted text-sm">{t('common.loading')}</div>
+            ) : yearChartType === 'stacked' ? (
+              <>
+                {/* Stacked bar chart: income bar + expense stacked by category */}
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={monthData} barGap={2} onClick={(e: unknown) => {
+                    const ev = e as { activeTooltipIndex?: number }
+                    if (ev?.activeTooltipIndex !== undefined) {
+                      setSelectedMonth(prev => prev === ev.activeTooltipIndex ? null : ev.activeTooltipIndex!)
+                    }
+                  }}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#A09890' }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <Tooltip content={<StackedTooltip />} />
+                    {/* Income: standalone green bar */}
+                    <Bar
+                      dataKey="income"
+                      name={t('common.income')}
+                      fill="#7BA89B"
+                      radius={[3, 3, 0, 0]}
+                      opacity={selectedMonth !== null ? 0.45 : 1}
+                    />
+                    {/* Expense: stacked by category */}
+                    {expenseCatIds.map((catId, i) => (
+                      <Bar
+                        key={catId}
+                        dataKey={catId}
+                        name={catMap[catId]?.name ?? catId}
+                        stackId="expense"
+                        fill={CHART_COLORS[i % CHART_COLORS.length]}
+                        radius={i === expenseCatIds.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                        opacity={selectedMonth !== null ? 0.45 : 1}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+                {/* Category color legend */}
+                {expenseCatIds.length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: '#7BA89B' }} />
+                      <span className="text-xs text-text-muted">{t('common.income')}</span>
+                    </div>
+                    {expenseCatIds.map((catId, i) => (
+                      <div key={catId} className="flex items-center gap-1.5">
+                        <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        <span className="text-xs text-text-muted">{catMap[catId]?.icon} {catMap[catId]?.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
+              /* Line chart: income / expense / balance trends */
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={monthData} onClick={(e: unknown) => {
-                  const ev = e as { activeTooltipIndex?: number }
-                  if (ev?.activeTooltipIndex !== undefined) {
-                    setSelectedMonth(prev => prev === ev.activeTooltipIndex ? null : ev.activeTooltipIndex!)
-                  }
-                }}>
+                <LineChart data={monthData}>
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#A09890' }} axisLine={false} tickLine={false} />
                   <YAxis hide />
-                  <Tooltip formatter={(val) => fmt(Number(val))} contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }} />
-                  <Bar dataKey="income" name={t('common.income')} fill="#7BA89B" radius={[3, 3, 0, 0]} opacity={selectedMonth !== null ? 0.45 : 1} />
-                  <Bar dataKey="expense" name={t('common.expense')} fill="#B87B72" radius={[3, 3, 0, 0]} opacity={selectedMonth !== null ? 0.45 : 1} />
-                </BarChart>
+                  <Tooltip
+                    formatter={(val: number, name: string) => [fmt(val), name]}
+                    contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                  <Line type="monotone" dataKey="income" name={t('common.income')} stroke="#7BA89B" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="expense" name={t('common.expense')} stroke="#B87B72" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="balance" name={t('common.balance')} stroke="#7A9EC4" strokeWidth={2} strokeDasharray="4 2" dot={false} activeDot={{ r: 4 }} />
+                </LineChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Month detail when a bar is selected */}
-          {selectedMonth !== null && (
+          {/* Month detail when a bar is selected (stacked view only) */}
+          {selectedMonth !== null && yearChartType === 'stacked' && (
             <div className="bg-accent-light border border-accent rounded-xl p-4 space-y-3">
               <h3 className="font-heading text-base font-semibold text-text">{MONTHS_LONG[selectedMonth]} · {t('analytics.monthlyDetail')}</h3>
               <div className="grid grid-cols-3 gap-2">
@@ -422,9 +539,7 @@ export default function Analytics() {
           {/* Day-by-day chart */}
           {viewExpense > 0 && (
             <div className="bg-surface border border-border rounded-xl p-4">
-              <h2 className="font-heading text-sm font-semibold text-text mb-3">
-                {t('analytics.extraordinary').replace('⚡ ', '')} — {t('common.expense')}
-              </h2>
+              <h2 className="font-heading text-sm font-semibold text-text mb-3">{t('common.expense')}</h2>
               <ResponsiveContainer width="100%" height={120}>
                 <BarChart data={dayData}>
                   <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#A09890' }} axisLine={false} tickLine={false} interval={4} />
