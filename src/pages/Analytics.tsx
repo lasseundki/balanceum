@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
@@ -9,7 +9,7 @@ import { fmt, fmtShort, fmtCurrency } from '../lib/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
-const CHART_COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4']
+const CHART_COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4', '#B87B72', '#6E9E8A']
 
 export default function Analytics() {
   const { t, i18n } = useTranslation()
@@ -42,6 +42,32 @@ export default function Analytics() {
   const totalExpense = monthData.reduce((s, m) => s + m.expense, 0)
   const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
 
+  const avgExpense = totalExpense / 12
+  const outliers = monthData.filter(m => m.expense > avgExpense * 1.5 && m.expense > 0)
+
+  const filteredTxs = selectedMonth !== null
+    ? transactions.filter(t => new Date(t.date).getMonth() === selectedMonth)
+    : transactions
+
+  const catTotals = useMemo(() =>
+    filteredTxs
+      .filter(t => t.type === 'expense')
+      .reduce<Record<string, number>>((acc, t) => {
+        acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
+        return acc
+      }, {}),
+    [filteredTxs]
+  )
+
+  const catList = useMemo(() =>
+    Object.entries(catTotals)
+      .map(([id, total]) => ({ id, cat: catMap[id], total }))
+      .sort((a, b) => b.total - a.total),
+    [catTotals, catMap]
+  )
+
+  const catExpenseTotal = catList.reduce((s, c) => s + c.total, 0)
+
   const currencyBreakdown = useMemo(() => {
     const foreign = transactions.filter(t => t.type === 'expense' && t.currency && t.currency !== baseCurrency)
     const map: Record<string, { inBase: number; original: number }> = {}
@@ -53,24 +79,7 @@ export default function Analytics() {
     return Object.entries(map).sort(([, a], [, b]) => b.inBase - a.inBase)
   }, [transactions, baseCurrency])
 
-  const avgExpense = totalExpense / 12
-  const outliers = monthData.filter(m => m.expense > avgExpense * 1.5 && m.expense > 0)
-
-  const filteredTxs = selectedMonth !== null
-    ? transactions.filter(t => new Date(t.date).getMonth() === selectedMonth)
-    : transactions
-
-  const catTotals = filteredTxs
-    .filter(t => t.type === 'expense')
-    .reduce<Record<string, number>>((acc, t) => {
-      acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
-      return acc
-    }, {})
-
-  const pieData = Object.entries(catTotals)
-    .map(([id, value]) => ({ name: catMap[id]?.name ?? '?', value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 6)
+  const periodLabel = selectedMonth !== null ? MONTHS[selectedMonth] : t('analytics.total')
 
   return (
     <div className="px-4 pt-4 pb-nav space-y-4">
@@ -120,7 +129,7 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Bar Chart */}
+      {/* Monthly Bar Chart */}
       <div className="bg-surface border border-border rounded-xl p-4">
         <div className="flex justify-between items-center mb-1">
           <h2 className="font-heading text-base font-semibold text-text">{t('analytics.monthlyOverview')}</h2>
@@ -145,32 +154,59 @@ export default function Analytics() {
                 formatter={(val) => fmt(Number(val))}
                 contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8, background: '#fff' }}
               />
-              <Bar dataKey="income" name={t('common.income')} fill="#7BA89B" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="income" name={t('common.income')} fill="#7BA89B" radius={[4, 4, 0, 0]}
+                opacity={selectedMonth !== null ? 0.5 : 1}
+              />
               <Bar dataKey="expense" name={t('common.expense')} fill="#B87B72" radius={[4, 4, 0, 0]}
-                opacity={selectedMonth !== null ? 0.6 : 1}
+                opacity={selectedMonth !== null ? 0.5 : 1}
               />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* Pie Chart */}
-      {pieData.length > 0 && (
-        <div className="bg-surface border border-border rounded-xl p-4">
-          <h2 className="font-heading text-base font-semibold text-text mb-1">
-            {t('analytics.byCategory')} {selectedMonth !== null ? `· ${MONTHS[selectedMonth]}` : `· ${t('analytics.total')}`}
-          </h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="45%" outerRadius={70} innerRadius={40} dataKey="value" paddingAngle={2}>
-                {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-              </Pie>
-              <Tooltip formatter={(val) => fmt(Number(val))} contentStyle={{ fontSize: 12, border: '1px solid #E2DED7', borderRadius: 8 }} />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: '#6E6860' }} />
-            </PieChart>
-          </ResponsiveContainer>
+      {/* Category Breakdown */}
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="font-heading text-base font-semibold text-text">{t('analytics.byCategory')}</h2>
+            <p className="text-xs text-text-muted mt-0.5">{periodLabel}</p>
+          </div>
+          {catExpenseTotal > 0 && (
+            <span className="text-sm font-semibold text-error">{fmt(catExpenseTotal)}</span>
+          )}
         </div>
-      )}
+
+        {loading ? (
+          <div className="text-center py-6 text-text-muted text-sm">{t('common.loading')}</div>
+        ) : catList.length === 0 ? (
+          <div className="text-center py-8 text-text-muted">
+            <p className="text-3xl mb-2">📊</p>
+            <p className="text-sm">{t('dashboard.noBookings')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {catList.map(({ id, cat, total }, idx) => {
+              const pct = catExpenseTotal > 0 ? (total / catExpenseTotal) * 100 : 0
+              const color = CHART_COLORS[idx % CHART_COLORS.length]
+              return (
+                <div key={id}>
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-lg w-6 text-center flex-shrink-0">{cat?.icon ?? '📌'}</span>
+                    <span className="flex-1 text-sm font-medium text-text truncate">{cat?.name ?? '?'}</span>
+                    <span className="text-xs text-text-muted w-10 text-right">{pct.toFixed(0)}%</span>
+                    <span className="text-sm font-semibold text-text w-20 text-right">{fmt(total)}</span>
+                  </div>
+                  <div className="ml-9 h-1.5 bg-bg-muted rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Currency Breakdown */}
       {currencyBreakdown.length > 0 && (
         <div className="bg-surface border border-border rounded-xl p-4">

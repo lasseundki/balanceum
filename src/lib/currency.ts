@@ -35,6 +35,14 @@ export const CURRENCIES: CurrencyInfo[] = [
   { code: 'THB', name: 'Thai Baht', symbol: '฿', flag: '🇹🇭' },
   { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', flag: '🇮🇩' },
   { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', flag: '🇲🇾' },
+  { code: 'ARS', name: 'Argentine Peso', symbol: '$', flag: '🇦🇷' },
+  { code: 'CLP', name: 'Chilean Peso', symbol: '$', flag: '🇨🇱' },
+  { code: 'COP', name: 'Colombian Peso', symbol: '$', flag: '🇨🇴' },
+  { code: 'PYG', name: 'Paraguayan Guaraní', symbol: '₲', flag: '🇵🇾' },
+  { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/', flag: '🇵🇪' },
+  { code: 'UYU', name: 'Uruguayan Peso', symbol: '$U', flag: '🇺🇾' },
+  { code: 'BOB', name: 'Bolivian Boliviano', symbol: 'Bs', flag: '🇧🇴' },
+  { code: 'VES', name: 'Venezuelan Bolívar', symbol: 'Bs.S', flag: '🇻🇪' },
 ]
 
 export function getCurrencyInfo(code: string): CurrencyInfo {
