@@ -53,6 +53,13 @@
     "jsonExport": "Exportar backup JSON", "jsonExportDesc": "Backup completo dos dados",
     "cloudNote": "Seus dados estão no Firebase e disponíveis em todos os seus dispositivos. Backups ainda são recomendados."
   },
+  "currency": {
+    "title": "Moedas", "home": "Moeda base", "homeDesc": "Todos os totais são exibidos nesta moeda",
+    "select": "Moeda", "rateInfo": "1 {{from}} = {{rate}} {{to}}", "loading": "Buscando taxa...",
+    "error": "Taxa indisponível. Inserir manualmente:", "converted": "≈ {{amount}}",
+    "breakdown": "Por moeda", "foreignOnly": "Apenas moedas estrangeiras",
+    "allCurrencies": "Todas as moedas", "originalAmount": "Valor original", "rateLabel": "Taxa na data"
+  },
   "auth": {
     "tagline": "Seu rastreador de finanças pessoal",
     "loginTitle": "Entrar", "registerTitle": "Criar conta",

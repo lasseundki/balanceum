@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories } from '../hooks/useFirestore'
-import { fmt, fmtShort, fmtMonthYear, fmtDateShort } from '../lib/formatters'
+import { fmt, fmtShort, fmtMonthYear, fmtDateShort, fmtCurrency } from '../lib/formatters'
 import { useAuth } from '../contexts/AuthContext'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
 export default function Dashboard() {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const { baseCurrency } = useCurrency()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -23,8 +26,8 @@ export default function Dashboard() {
     else setMonth(m => m + 1)
   }
 
-  const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-  const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+  const income = transactions.filter(t => t.type === 'income').reduce((s, t) => s + effectiveAmount(t), 0)
+  const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + effectiveAmount(t), 0)
   const balance = income - expense
 
   const catMap = Object.fromEntries(categories.map(c => [c.id, c]))
@@ -32,7 +35,7 @@ export default function Dashboard() {
   const catTotals = transactions
     .filter(t => t.type === 'expense')
     .reduce<Record<string, number>>((acc, t) => {
-      acc[t.categoryId] = (acc[t.categoryId] ?? 0) + t.amount
+      acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
       return acc
     }, {})
 
@@ -41,7 +44,17 @@ export default function Dashboard() {
     .slice(0, 5)
 
   const hasExtraordinary = transactions.some(t => t.isExtraordinary)
-  const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + t.amount, 0)
+  const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
+
+  // Foreign currency breakdown
+  const foreignTxs = transactions.filter(t => t.currency && t.currency !== baseCurrency)
+  const foreignBreakdown = foreignTxs.reduce<Record<string, { amount: number; inBase: number }>>((acc, t) => {
+    const c = t.currency!
+    if (!acc[c]) acc[c] = { amount: 0, inBase: 0 }
+    acc[c].amount += t.amount
+    acc[c].inBase += effectiveAmount(t)
+    return acc
+  }, {})
 
   const recent = transactions.slice(0, 12)
 
@@ -99,6 +112,29 @@ export default function Dashboard() {
           <div>
             <p className="text-xs font-semibold text-text">{t('dashboard.extraordinaryAlert')}</p>
             <p className="text-xs text-text-secondary">{t('dashboard.extraordinaryMonth', { amount: fmt(extraordinary) })}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Foreign Currency Summary */}
+      {Object.keys(foreignBreakdown).length > 0 && (
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <h2 className="font-heading text-sm font-semibold text-text mb-2">{t('currency.breakdown')}</h2>
+          <div className="space-y-1.5">
+            {Object.entries(foreignBreakdown).map(([code, { amount, inBase }]) => {
+              const info = getCurrencyInfo(code)
+              return (
+                <div key={code} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 text-text-secondary">
+                    <span>{info.flag}</span>
+                    <span className="font-medium">{code}</span>
+                  </span>
+                  <span className="text-text-secondary">
+                    {fmtCurrency(amount, code)} → <span className="font-semibold text-text">{fmt(inBase)}</span>
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

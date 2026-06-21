@@ -1,6 +1,7 @@
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
 import i18n from '../i18n'
+import { getBaseCurrency } from './currencyStore'
 
 function dateLocale() {
   switch (i18n.language) {
@@ -21,14 +22,18 @@ function intlLocale() {
 }
 
 export function fmt(amount: number): string {
-  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'EUR' }).format(amount)
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: getBaseCurrency() }).format(amount)
 }
 
 export function fmtShort(amount: number): string {
   if (Math.abs(amount) >= 1000) {
-    return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount)
+    return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: getBaseCurrency(), maximumFractionDigits: 0 }).format(amount)
   }
   return fmt(amount)
+}
+
+export function fmtCurrency(amount: number, currency: string): string {
+  return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency }).format(amount)
 }
 
 export function fmtDate(ts: number): string {

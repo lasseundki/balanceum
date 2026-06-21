@@ -53,6 +53,13 @@
     "jsonExport": "Export JSON Backup", "jsonExportDesc": "Full data backup",
     "cloudNote": "Your data is stored in Firebase and available on all your devices. Backups are still recommended."
   },
+  "currency": {
+    "title": "Currencies", "home": "Home Currency", "homeDesc": "All totals are shown in this currency",
+    "select": "Currency", "rateInfo": "1 {{from}} = {{rate}} {{to}}", "loading": "Fetching rate...",
+    "error": "Rate unavailable. Enter manually:", "converted": "≈ {{amount}}",
+    "breakdown": "By Currency", "foreignOnly": "Foreign currencies only",
+    "allCurrencies": "All currencies", "originalAmount": "Original amount", "rateLabel": "Rate at booking"
+  },
   "auth": {
     "tagline": "Your personal finance tracker",
     "loginTitle": "Sign in", "registerTitle": "Create account",

@@ -38,6 +38,9 @@ export interface Transaction {
   id: string
   type: TransactionType
   amount: number
+  currency?: string
+  exchangeRate?: number
+  amountInBase?: number
   date: number
   categoryId: string
   paymentMethodId?: string

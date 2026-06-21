@@ -5,12 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
 import { useYearTransactions, useCategories } from '../hooks/useFirestore'
-import { fmt, fmtShort } from '../lib/formatters'
+import { fmt, fmtShort, fmtCurrency } from '../lib/formatters'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
 const CHART_COLORS = ['#7BA89B', '#7A9EC4', '#C9A05A', '#A891C4', '#C47A91', '#7AB4C4']
 
 export default function Analytics() {
   const { t, i18n } = useTranslation()
+  const { baseCurrency } = useCurrency()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const { transactions, loading } = useYearTransactions(year)
@@ -29,15 +32,26 @@ export default function Analytics() {
   const monthData = useMemo(() => {
     return MONTHS.map((name, m) => {
       const txs = transactions.filter(t => new Date(t.date).getMonth() === m)
-      const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+      const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + effectiveAmount(t), 0)
+      const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + effectiveAmount(t), 0)
       return { name, income, expense, balance: income - expense }
     })
   }, [transactions, MONTHS])
 
   const totalIncome = monthData.reduce((s, m) => s + m.income, 0)
   const totalExpense = monthData.reduce((s, m) => s + m.expense, 0)
-  const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + t.amount, 0)
+  const extraordinary = transactions.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
+
+  const currencyBreakdown = useMemo(() => {
+    const foreign = transactions.filter(t => t.type === 'expense' && t.currency && t.currency !== baseCurrency)
+    const map: Record<string, { inBase: number; original: number }> = {}
+    for (const t of foreign) {
+      if (!map[t.currency!]) map[t.currency!] = { inBase: 0, original: 0 }
+      map[t.currency!].inBase += effectiveAmount(t)
+      map[t.currency!].original += t.amount
+    }
+    return Object.entries(map).sort(([, a], [, b]) => b.inBase - a.inBase)
+  }, [transactions, baseCurrency])
 
   const avgExpense = totalExpense / 12
   const outliers = monthData.filter(m => m.expense > avgExpense * 1.5 && m.expense > 0)
@@ -49,7 +63,7 @@ export default function Analytics() {
   const catTotals = filteredTxs
     .filter(t => t.type === 'expense')
     .reduce<Record<string, number>>((acc, t) => {
-      acc[t.categoryId] = (acc[t.categoryId] ?? 0) + t.amount
+      acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
       return acc
     }, {})
 
@@ -155,6 +169,35 @@ export default function Analytics() {
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: '#6E6860' }} />
             </PieChart>
           </ResponsiveContainer>
+        </div>
+      )}
+      {/* Currency Breakdown */}
+      {currencyBreakdown.length > 0 && (
+        <div className="bg-surface border border-border rounded-xl p-4">
+          <h2 className="font-heading text-base font-semibold text-text mb-3">{t('currency.breakdown')}</h2>
+          <div className="space-y-3">
+            {currencyBreakdown.map(([code, { inBase, original }]) => {
+              const info = getCurrencyInfo(code)
+              const pct = totalExpense > 0 ? (inBase / totalExpense) * 100 : 0
+              return (
+                <div key={code}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-2 text-sm font-medium text-text">
+                      <span>{info.flag}</span>
+                      <span>{code}</span>
+                    </span>
+                    <div className="text-right">
+                      <p className="text-xs text-text-muted">{fmtCurrency(original, code)}</p>
+                      <p className="text-sm font-semibold text-text">{fmt(inBase)}</p>
+                    </div>
+                  </div>
+                  <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-info rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

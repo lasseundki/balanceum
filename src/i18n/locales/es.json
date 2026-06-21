@@ -53,6 +53,13 @@
     "jsonExport": "Exportar respaldo JSON", "jsonExportDesc": "Copia de seguridad completa",
     "cloudNote": "Tus datos están en Firebase y disponibles en todos tus dispositivos. Los respaldos igualmente se recomiendan."
   },
+  "currency": {
+    "title": "Divisas", "home": "Moneda base", "homeDesc": "Todos los totales se muestran en esta moneda",
+    "select": "Moneda", "rateInfo": "1 {{from}} = {{rate}} {{to}}", "loading": "Cargando tipo de cambio...",
+    "error": "Tipo no disponible. Ingresa manualmente:", "converted": "≈ {{amount}}",
+    "breakdown": "Por moneda", "foreignOnly": "Solo monedas extranjeras",
+    "allCurrencies": "Todas las monedas", "originalAmount": "Monto original", "rateLabel": "Tasa al momento"
+  },
   "auth": {
     "tagline": "Tu rastreador de finanzas personal",
     "loginTitle": "Iniciar sesión", "registerTitle": "Crear cuenta",

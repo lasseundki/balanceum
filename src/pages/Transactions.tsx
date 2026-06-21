@@ -2,12 +2,15 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Search, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories, useTransactionActions } from '../hooks/useFirestore'
-import { fmt, fmtMonthYear } from '../lib/formatters'
+import { fmt, fmtMonthYear, fmtCurrency } from '../lib/formatters'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { effectiveAmount } from '../lib/currency'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
 
 export default function Transactions() {
   const { t, i18n } = useTranslation()
+  const { baseCurrency } = useCurrency()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -18,6 +21,7 @@ export default function Transactions() {
   const [search, setSearch] = useState('')
   const [filterCatId, setFilterCatId] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'expense' | 'income'>('all')
+  const [filterCurrency, setFilterCurrency] = useState<string>('')
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const dateLocale = i18n.language === 'de' ? de : i18n.language === 'es' ? es : i18n.language === 'pt' ? ptBR : enUS
@@ -31,10 +35,16 @@ export default function Transactions() {
 
   const catMap = Object.fromEntries(categories.map(c => [c.id, c]))
 
+  const usedForeignCurrencies = useMemo(() =>
+    [...new Set(transactions.filter(tx => tx.currency && tx.currency !== baseCurrency).map(tx => tx.currency!))],
+    [transactions, baseCurrency]
+  )
+
   const filtered = useMemo(() => {
     return transactions.filter(tx => {
       if (filterType !== 'all' && tx.type !== filterType) return false
       if (filterCatId && tx.categoryId !== filterCatId) return false
+      if (filterCurrency && (tx.currency ?? baseCurrency) !== filterCurrency) return false
       if (search) {
         const q = search.toLowerCase()
         const catName = catMap[tx.categoryId]?.name?.toLowerCase() ?? ''
@@ -43,10 +53,10 @@ export default function Transactions() {
       }
       return true
     })
-  }, [transactions, filterType, filterCatId, search, catMap])
+  }, [transactions, filterType, filterCatId, filterCurrency, search, catMap, baseCurrency])
 
-  const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0)
-  const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0)
+  const income = transactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + effectiveAmount(tx), 0)
+  const expense = transactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + effectiveAmount(tx), 0)
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof filtered>()
@@ -117,6 +127,39 @@ export default function Transactions() {
         ))}
       </div>
 
+      {/* Currency filter */}
+      {usedForeignCurrencies.length > 0 && (
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setFilterCurrency('')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              !filterCurrency ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+            }`}
+          >
+            {t('currency.allCurrencies')}
+          </button>
+          <button
+            onClick={() => setFilterCurrency(baseCurrency)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              filterCurrency === baseCurrency ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+            }`}
+          >
+            {baseCurrency}
+          </button>
+          {usedForeignCurrencies.map(c => (
+            <button
+              key={c}
+              onClick={() => setFilterCurrency(c)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                filterCurrency === c ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
         <button
@@ -153,7 +196,7 @@ export default function Transactions() {
           {grouped.map(([dateKey, txs]) => {
             const d = new Date(dateKey)
             const dayLabel = format(d, 'EEEE, d MMMM', { locale: dateLocale })
-            const dayTotal = txs.reduce((s, tx) => s + (tx.type === 'income' ? tx.amount : -tx.amount), 0)
+            const dayTotal = txs.reduce((s, tx) => s + (tx.type === 'income' ? effectiveAmount(tx) : -effectiveAmount(tx)), 0)
             return (
               <div key={dateKey}>
                 <div className="flex justify-between items-center mb-2">
@@ -184,9 +227,16 @@ export default function Transactions() {
                               )}
                             </div>
                           </div>
-                          <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
-                            {tx.type === 'income' ? '+' : '−'}{fmt(tx.amount)}
-                          </span>
+                          <div className="text-right">
+                            {tx.currency && tx.currency !== baseCurrency && (
+                              <p className="text-xs text-text-muted">
+                                {fmtCurrency(tx.amount, tx.currency)}
+                              </p>
+                            )}
+                            <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
+                              {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
+                            </span>
+                          </div>
                           <button
                             onClick={() => handleDelete(tx.id)}
                             disabled={deleting === tx.id}

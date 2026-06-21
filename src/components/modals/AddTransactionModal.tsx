@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import { X, Star, Zap } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Star, Zap, ChevronDown, AlertCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import { useCategories, usePaymentMethods, useMembers, useTransactionActions } from '../../hooks/useFirestore'
+import { useCurrency } from '../../contexts/CurrencyContext'
+import { CURRENCIES, fetchExchangeRate } from '../../lib/currency'
+import { fmtCurrency } from '../../lib/formatters'
 import type { TransactionType } from '../../types'
 
 interface Props {
@@ -11,6 +14,7 @@ interface Props {
 
 export default function AddTransactionModal({ onClose }: Props) {
   const { t } = useTranslation()
+  const { baseCurrency } = useCurrency()
   const categories = useCategories()
   const paymentMethods = usePaymentMethods()
   const members = useMembers()
@@ -27,15 +31,43 @@ export default function AddTransactionModal({ onClose }: Props) {
   const [isExtraordinary, setIsExtraordinary] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Currency
+  const [currency, setCurrency] = useState(baseCurrency)
+  const [exchangeRate, setExchangeRate] = useState(1)
+  const [rateLoading, setRateLoading] = useState(false)
+  const [rateError, setRateError] = useState(false)
+  const [manualRate, setManualRate] = useState('')
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false)
+  const rateAbort = useRef<AbortController | null>(null)
+
+  const isForeign = currency !== baseCurrency
+  const parsedAmount = parseFloat(amount.replace(',', '.')) || 0
+  const effectiveRate = rateError && manualRate ? parseFloat(manualRate.replace(',', '.')) : exchangeRate
+  const amountInBase = isForeign ? parsedAmount * effectiveRate : parsedAmount
+
+  useEffect(() => {
+    if (!isForeign) { setExchangeRate(1); setRateError(false); return }
+    setRateLoading(true)
+    setRateError(false)
+    rateAbort.current?.abort()
+    rateAbort.current = new AbortController()
+    fetchExchangeRate(currency, baseCurrency)
+      .then(rate => { setExchangeRate(rate); setRateLoading(false) })
+      .catch(() => { setRateError(true); setRateLoading(false) })
+  }, [currency, baseCurrency, isForeign])
+
   const filteredCats = categories.filter(c => c.type === type || c.type === 'both')
 
   async function handleSave() {
-    const parsed = parseFloat(amount.replace(',', '.'))
-    if (!parsed || parsed <= 0 || !categoryId) return
+    if (!parsedAmount || parsedAmount <= 0 || !categoryId) return
+    if (isForeign && rateError && !manualRate) return
     setSaving(true)
     await addTransaction({
       type,
-      amount: parsed,
+      amount: parsedAmount,
+      currency: isForeign ? currency : undefined,
+      exchangeRate: isForeign ? effectiveRate : undefined,
+      amountInBase: isForeign ? amountInBase : undefined,
       date: new Date(date).getTime(),
       categoryId,
       paymentMethodId: paymentMethodId || undefined,
@@ -76,20 +108,69 @@ export default function AddTransactionModal({ onClose }: Props) {
             ))}
           </div>
 
-          {/* Amount */}
+          {/* Amount + Currency */}
           <div>
             <label className="block text-sm font-medium text-text mb-1.5">{t('common.amount')}</label>
-            <div className="relative">
-              <input
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="0,00"
-                className="w-full border border-border rounded-md px-3 py-2.5 text-2xl font-bold text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light pr-12"
-                autoFocus
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xl font-semibold text-text-muted">€</span>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full border border-border rounded-md px-3 py-2.5 text-2xl font-bold text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={() => setShowCurrencyPicker(true)}
+                className="flex items-center gap-1.5 px-3 py-2.5 border border-border rounded-md text-sm font-semibold text-text bg-surface hover:bg-bg-subtle transition-colors min-w-[80px] justify-between"
+              >
+                <span>{currency}</span>
+                <ChevronDown size={14} className="text-text-muted" />
+              </button>
             </div>
+
+            {/* Exchange Rate Info */}
+            {isForeign && (
+              <div className="mt-2 px-3 py-2 bg-info-light rounded-md text-xs space-y-1">
+                {rateLoading && (
+                  <p className="text-text-secondary">{t('currency.loading')}</p>
+                )}
+                {!rateLoading && !rateError && (
+                  <>
+                    <p className="text-text-secondary">
+                      {t('currency.rateInfo', { from: currency, rate: exchangeRate.toFixed(4), to: baseCurrency })}
+                    </p>
+                    {parsedAmount > 0 && (
+                      <p className="font-semibold text-text">
+                        {t('currency.converted', { amount: fmtCurrency(amountInBase, baseCurrency) })}
+                      </p>
+                    )}
+                  </>
+                )}
+                {!rateLoading && rateError && (
+                  <>
+                    <div className="flex items-center gap-1.5 text-error">
+                      <AlertCircle size={12} />
+                      <span>{t('currency.error')}</span>
+                    </div>
+                    <input
+                      type="number"
+                      value={manualRate}
+                      onChange={e => setManualRate(e.target.value)}
+                      placeholder="0.0000"
+                      className="w-full border border-border rounded px-2 py-1 text-xs text-text bg-surface focus:outline-none focus:border-accent"
+                    />
+                    {manualRate && parsedAmount > 0 && (
+                      <p className="font-semibold text-text">
+                        {t('currency.converted', { amount: fmtCurrency(amountInBase, baseCurrency) })}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Date */}
@@ -209,13 +290,44 @@ export default function AddTransactionModal({ onClose }: Props) {
           {/* Save */}
           <button
             onClick={handleSave}
-            disabled={saving || !amount || !categoryId}
+            disabled={saving || !amount || !categoryId || (isForeign && rateError && !manualRate)}
             className="w-full bg-accent text-text-inverse py-3 rounded-lg font-semibold text-sm hover:bg-accent-hover transition-colors disabled:opacity-40"
           >
             {saving ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>
+
+      {/* Currency Picker Sheet */}
+      {showCurrencyPicker && (
+        <div className="absolute inset-0 z-10 flex items-end">
+          <div className="absolute inset-0 bg-black/20" onClick={() => setShowCurrencyPicker(false)} />
+          <div className="relative w-full bg-surface rounded-t-xl shadow-xl max-h-[70vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h3 className="font-heading text-base font-semibold text-text">{t('currency.select')}</h3>
+              <button onClick={() => setShowCurrencyPicker(false)} className="p-1 text-text-muted"><X size={20} /></button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {CURRENCIES.map(c => (
+                <button
+                  key={c.code}
+                  onClick={() => { setCurrency(c.code); setManualRate(''); setShowCurrencyPicker(false) }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition-colors border-b border-border/50 last:border-0 ${
+                    currency === c.code ? 'bg-accent-light' : ''
+                  }`}
+                >
+                  <span className="text-xl">{c.flag}</span>
+                  <div className="flex-1 text-left">
+                    <span className="text-sm font-medium text-text">{c.code}</span>
+                    <span className="text-xs text-text-muted ml-2">{c.name}</span>
+                  </div>
+                  <span className="text-sm text-text-muted font-medium">{c.symbol}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

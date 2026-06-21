@@ -53,6 +53,13 @@
     "jsonExport": "JSON-Backup exportieren", "jsonExportDesc": "Vollständige Datensicherung",
     "cloudNote": "Deine Daten sind in der Firebase-Cloud gespeichert und auf allen Geräten verfügbar. Backups werden trotzdem empfohlen."
   },
+  "currency": {
+    "title": "Währungen", "home": "Heimwährung", "homeDesc": "Alle Summen werden in dieser Währung angezeigt",
+    "select": "Währung", "rateInfo": "1 {{from}} = {{rate}} {{to}}", "loading": "Kurs wird geladen...",
+    "error": "Kurs nicht verfügbar. Manuell eingeben:", "converted": "≈ {{amount}}",
+    "breakdown": "Nach Währung", "foreignOnly": "Nur Fremdwährungen",
+    "allCurrencies": "Alle Währungen", "originalAmount": "Originalbetrag", "rateLabel": "Kurs bei Buchung"
+  },
   "auth": {
     "tagline": "Dein persönlicher Finanztracker",
     "loginTitle": "Anmelden", "registerTitle": "Konto erstellen",

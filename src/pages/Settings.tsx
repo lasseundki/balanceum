@@ -9,11 +9,13 @@ import {
 } from '../hooks/useFirestore'
 import { useAuth } from '../contexts/AuthContext'
 import { useAccessibility } from '../contexts/AccessibilityContext'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { CURRENCIES } from '../lib/currency'
 import { exportCSV, exportJSON } from '../lib/export'
 import { fmt } from '../lib/formatters'
 import type { CategoryType, TransactionType, Frequency } from '../types'
 
-type Section = 'main' | 'categories' | 'members' | 'recurring' | 'data' | 'language' | 'accessibility'
+type Section = 'main' | 'categories' | 'members' | 'recurring' | 'data' | 'language' | 'accessibility' | 'currency'
 
 const CAT_ICONS = ['🏠','🛒','🚗','💊','🎉','🍽️','👕','📚','✈️','💻','🧹','📋','💼','💰','📈','📌','🎁','🏥','🏋️','🎵','📱','🌿','🐾','🎓','💡']
 
@@ -28,6 +30,7 @@ export default function Settings() {
   const { t, i18n } = useTranslation()
   const { user, logout } = useAuth()
   const { fontSize, setFontSize, highContrast, setHighContrast } = useAccessibility()
+  const { baseCurrency, setBaseCurrency } = useCurrency()
   const categories = useCategories()
   const { addCategory, deleteCategory } = useCategoryActions()
   const members = useMembers()
@@ -156,6 +159,32 @@ export default function Settings() {
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${highContrast ? 'translate-x-6' : ''}`} />
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {section === 'currency' && (
+          <div className="space-y-4">
+            <h1 className="font-heading text-xl font-bold text-text">{t('currency.title')}</h1>
+            <p className="text-sm text-text-secondary">{t('currency.homeDesc')}</p>
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              {CURRENCIES.map((c, i) => (
+                <div key={c.code}>
+                  {i > 0 && <div className="h-px bg-border" />}
+                  <button
+                    onClick={() => setBaseCurrency(c.code)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-subtle transition-colors"
+                  >
+                    <span className="text-xl">{c.flag}</span>
+                    <div className="flex-1 text-left">
+                      <span className="text-sm font-medium text-text">{c.code}</span>
+                      <span className="text-xs text-text-muted ml-2">{c.name}</span>
+                    </div>
+                    <span className="text-sm text-text-muted mr-2">{c.symbol}</span>
+                    {baseCurrency === c.code && <Check size={18} className="text-accent" />}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -324,6 +353,7 @@ export default function Settings() {
           { key: 'members', label: t('settings.members'), sub: t('settings.membersDesc', { count: members.length }) },
           { key: 'recurring', label: t('settings.recurring'), sub: t('settings.recurringDesc', { count: recurring.length }) },
           { key: 'data', label: t('settings.data'), sub: t('settings.dataDesc') },
+          { key: 'currency', label: t('currency.title'), sub: `${baseCurrency} · ${CURRENCIES.find(c => c.code === baseCurrency)?.name ?? ''}` },
           { key: 'language', label: t('settings.language'), sub: LANGUAGES.find(l => l.code === i18n.language)?.label ?? '' },
           { key: 'accessibility', label: t('settings.accessibility'), sub: `${t(`settings.font${fontSize.charAt(0).toUpperCase() + fontSize.slice(1)}` as 'settings.fontSm')}${highContrast ? ' · HC' : ''}` },
         ] as { key: Section; label: string; sub: string }[]).map(({ key, label, sub }, i) => (
