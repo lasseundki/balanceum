@@ -1,4 +1,7 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase/config'
+import { useAuth } from './AuthContext'
 import { syncBaseCurrency } from '../lib/currencyStore'
 
 interface CurrencyContextType {
@@ -9,14 +12,33 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | null>(null)
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
   const [baseCurrency, setBaseCurrencyState] = useState(
     () => localStorage.getItem('balanceum_currency') ?? 'EUR'
   )
+
+  // On login: load from Firestore and override localStorage if a synced value exists
+  useEffect(() => {
+    if (!user) return
+    const prefsRef = doc(db, 'users', user.uid, 'settings', 'prefs')
+    getDoc(prefsRef).then(snap => {
+      const currency = snap.data()?.baseCurrency as string | undefined
+      if (currency) {
+        setBaseCurrencyState(currency)
+        syncBaseCurrency(currency)
+        localStorage.setItem('balanceum_currency', currency)
+      }
+    })
+  }, [user?.uid])
 
   const setBaseCurrency = (code: string) => {
     setBaseCurrencyState(code)
     syncBaseCurrency(code)
     localStorage.setItem('balanceum_currency', code)
+    if (user) {
+      const prefsRef = doc(db, 'users', user.uid, 'settings', 'prefs')
+      setDoc(prefsRef, { baseCurrency: code }, { merge: true }).catch(() => {})
+    }
   }
 
   return (
