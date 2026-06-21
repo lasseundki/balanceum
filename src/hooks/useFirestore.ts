@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   collection, query, where, orderBy, onSnapshot,
   addDoc, updateDoc, deleteDoc, doc,
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from '../contexts/AuthContext'
+import { processRecurringTransactions } from '../lib/recurringProcessor'
 import { monthRange, yearRange } from '../lib/formatters'
 import type { Transaction, Category, PaymentMethod, Member, RecurringTransaction } from '../types'
 
@@ -179,4 +180,25 @@ export function useRecurringActions() {
     await updateDoc(userDoc(user.uid, 'recurringTransactions', id), data as Record<string, unknown>)
   }, [user])
   return { addRecurring, deleteRecurring, updateRecurring }
+}
+
+export function useRecurringProcessor() {
+  const { user } = useAuth()
+  const { addTransaction } = useTransactionActions()
+  const { updateRecurring } = useRecurringActions()
+  const done = useRef(false)
+
+  useEffect(() => {
+    if (!user) { done.current = false; return }
+    if (done.current) return
+
+    const unsub = onSnapshot(userCol(user.uid, 'recurringTransactions'), (snap) => {
+      if (done.current) return
+      done.current = true
+      const recurring = snap.docs.map(d => ({ id: d.id, ...d.data() } as RecurringTransaction))
+      void processRecurringTransactions(recurring, addTransaction, updateRecurring)
+    })
+
+    return unsub
+  }, [user, addTransaction, updateRecurring])
 }

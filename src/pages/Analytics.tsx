@@ -68,6 +68,23 @@ export default function Analytics() {
 
   const catExpenseTotal = catList.reduce((s, c) => s + c.total, 0)
 
+  const outlierDetails = useMemo(() =>
+    outliers.map(o => {
+      const monthIdx = MONTHS.indexOf(o.name)
+      const monthTxs = transactions.filter(t => t.type === 'expense' && new Date(t.date).getMonth() === monthIdx)
+      const totals = monthTxs.reduce<Record<string, number>>((acc, t) => {
+        acc[t.categoryId] = (acc[t.categoryId] ?? 0) + effectiveAmount(t)
+        return acc
+      }, {})
+      const top = Object.entries(totals)
+        .map(([id, total]) => ({ cat: catMap[id], total }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3)
+      return { ...o, top }
+    }),
+    [outliers, transactions, catMap, MONTHS]
+  )
+
   const currencyBreakdown = useMemo(() => {
     const foreign = transactions.filter(t => t.type === 'expense' && t.currency && t.currency !== baseCurrency)
     const map: Record<string, { inBase: number; original: number }> = {}
@@ -109,15 +126,24 @@ export default function Analytics() {
       </div>
 
       {/* Outlier Alert */}
-      {outliers.length > 0 && (
-        <div className="flex items-start gap-3 bg-warning-light border border-warning rounded-lg p-3">
-          <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
-          <div>
+      {outlierDetails.length > 0 && (
+        <div className="bg-warning-light border border-warning rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-warning flex-shrink-0" />
             <p className="text-xs font-semibold text-text">{t('analytics.outlier')}</p>
-            <p className="text-xs text-text-secondary">
-              {t('analytics.outlierDesc', { months: outliers.map(o => o.name).join(', ') })}
-            </p>
           </div>
+          {outlierDetails.map((o, idx) => (
+            <div key={idx} className="ml-6 space-y-1">
+              <p className="text-xs font-medium text-text">{o.name} · {fmt(o.expense)}</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                {o.top.map(({ cat, total }) => (
+                  <span key={cat?.id ?? total} className="text-xs text-text-secondary">
+                    {cat?.icon} {cat?.name} {fmt(total)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

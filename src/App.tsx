@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth, ensureUserSeeded } from './contexts/AuthContext'
+import { useRecurringProcessor } from './hooks/useFirestore'
 import BottomNav from './components/layout/BottomNav'
 import AddTransactionModal from './components/modals/AddTransactionModal'
 import Dashboard from './pages/Dashboard'
@@ -15,6 +16,8 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 function AppLayout() {
   const [showAdd, setShowAdd] = useState(false)
   const { user } = useAuth()
+
+  useRecurringProcessor()
 
   useEffect(() => {
     if (user) ensureUserSeeded(user.uid)
