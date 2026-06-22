@@ -2,6 +2,22 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Restore path encoded by 404.html redirect
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var r = params.get('r');
+        if (r) {
+          params.delete('r');
+          var qs = params.toString();
+          window.history.replaceState(
+            null, null,
+            window.location.pathname + '/' + decodeURIComponent(r) +
+            (qs ? '?' + qs : '') + window.location.hash
+          );
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="icon" type="image/png" href="./favicon-32.png" sizes="32x32" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
