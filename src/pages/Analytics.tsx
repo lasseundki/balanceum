@@ -147,8 +147,26 @@ export default function Analytics() {
   const totalIncome = monthData.reduce((s, m) => s + m.income, 0)
   const totalExpense = monthData.reduce((s, m) => s + m.expense, 0)
   const extraordinary = baseTxs.filter(t => t.isExtraordinary).reduce((s, t) => s + effectiveAmount(t), 0)
-  const avgExpense = totalExpense / 12
-  const outliers = monthData.filter(m => m.expense > avgExpense * 1.5 && m.expense > 0)
+
+  // Outlier detection uses only variable (non-recurring) expenses and only active months
+  const variableMonthExpenses = useMemo(() =>
+    MONTHS.map((_, m) => {
+      const txs = baseTxs.filter(t =>
+        t.type === 'expense' && !t.recurringId && new Date(t.date).getMonth() === m
+      )
+      return txs.reduce((s, t) => s + effectiveAmount(t), 0)
+    }),
+    [baseTxs, MONTHS]
+  )
+  const activeVariableMonths = variableMonthExpenses.filter(v => v > 0)
+  const avgVariableExpense = activeVariableMonths.length > 0
+    ? activeVariableMonths.reduce((s, v) => s + v, 0) / activeVariableMonths.length
+    : 0
+  const outliers = monthData.filter((_m, i) =>
+    avgVariableExpense > 0 &&
+    variableMonthExpenses[i] > avgVariableExpense * 1.75 &&
+    activeVariableMonths.length >= 3
+  )
 
   const outlierDetails = useMemo(() =>
     outliers.map(o => {
