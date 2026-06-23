@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { auth } from '../../firebase/config'
 import { saveEmailToHistory, getEmailHistory } from '../../lib/noteHistory'
 
-type ErrorType = 'credentials' | 'no-account' | 'other'
+type ErrorType = 'credentials' | 'no-account' | 'too-many' | 'other'
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -56,8 +56,11 @@ export default function LoginPage() {
       if (err instanceof FirebaseError) {
         if (err.code === 'auth/user-not-found') {
           setErrorType('no-account')
+        } else if (err.code === 'auth/too-many-requests') {
+          setErrorType('too-many')
         } else {
-          // auth/invalid-credential (new SDK), auth/wrong-password, etc.
+          // auth/invalid-credential (new SDK combines user-not-found + wrong-password),
+          // auth/wrong-password, etc.
           setErrorType('credentials')
         }
       } else {
@@ -96,8 +99,24 @@ export default function LoginPage() {
             </div>
           )}
           {errorType === 'credentials' && (
-            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2 rounded-md">
-              {t('auth.wrongCredentials')}
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2.5 rounded-md space-y-1">
+              <p>{t('auth.wrongCredentials')}</p>
+              <p>
+                {t('auth.noAccount')}{' '}
+                <Link to={`/register?email=${encodeURIComponent(email)}`} className="font-semibold underline underline-offset-2">
+                  {t('auth.register')}
+                </Link>
+              </p>
+            </div>
+          )}
+          {errorType === 'too-many' && (
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2.5 rounded-md space-y-1">
+              <p>{t('auth.tooManyRequests')}</p>
+              <p>
+                <Link to="/forgot-password" className="font-semibold underline underline-offset-2">
+                  {t('auth.forgotPassword')}
+                </Link>
+              </p>
             </div>
           )}
           {errorType === 'other' && (

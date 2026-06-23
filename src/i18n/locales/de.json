@@ -103,6 +103,7 @@
     "emailInUse": "Diese E-Mail ist bereits registriert.",
     "registerFailed": "Registrierung fehlgeschlagen. Bitte erneut versuchen.",
     "emailNotFound": "E-Mail-Adresse nicht gefunden.",
-    "passwordTooShort": "Passwort muss mindestens 6 Zeichen haben."
+    "passwordTooShort": "Passwort muss mindestens 6 Zeichen haben.",
+    "tooManyRequests": "Zu viele Versuche. Bitte warte kurz oder setze dein Passwort zurück."
   }
 }

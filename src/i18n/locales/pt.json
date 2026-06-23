@@ -103,6 +103,7 @@
     "emailInUse": "Este e-mail já está cadastrado.",
     "registerFailed": "Falha no cadastro. Por favor, tente novamente.",
     "emailNotFound": "Endereço de e-mail não encontrado.",
-    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres."
+    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres.",
+    "tooManyRequests": "Muitas tentativas. Por favor aguarde um momento ou redefina sua senha."
   }
 }
