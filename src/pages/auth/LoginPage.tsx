@@ -1,21 +1,25 @@
 import { useState, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
+import { FirebaseError } from 'firebase/app'
 import { setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth'
 import { useAuth } from '../../contexts/AuthContext'
 import { auth } from '../../firebase/config'
 import { saveEmailToHistory, getEmailHistory } from '../../lib/noteHistory'
 
+type ErrorType = 'credentials' | 'no-account' | 'other'
+
 export default function LoginPage() {
   const { t } = useTranslation()
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [searchParams] = useSearchParams()
+  const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
-  const [error, setError] = useState('')
+  const [errorType, setErrorType] = useState<ErrorType | null>(null)
   const [loading, setLoading] = useState(false)
 
   const [emailFocused, setEmailFocused] = useState(false)
@@ -41,15 +45,24 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
+    setErrorType(null)
     setLoading(true)
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
       await login(email, password)
       saveEmailToHistory(email)
       navigate('/')
-    } catch {
-      setError(t('auth.wrongCredentials'))
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        if (err.code === 'auth/user-not-found') {
+          setErrorType('no-account')
+        } else {
+          // auth/invalid-credential (new SDK), auth/wrong-password, etc.
+          setErrorType('credentials')
+        }
+      } else {
+        setErrorType('other')
+      }
     } finally {
       setLoading(false)
     }
@@ -70,8 +83,27 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-xl p-6 shadow-md space-y-4">
           <h2 className="font-heading text-xl font-semibold text-text">{t('auth.loginTitle')}</h2>
 
-          {error && (
-            <div className="bg-error-light text-error text-sm px-3 py-2 rounded-md">{error}</div>
+          {/* Error messages */}
+          {errorType === 'no-account' && (
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2.5 rounded-md space-y-1">
+              <p>{t('auth.emailNotFound')}</p>
+              <p>
+                {t('auth.noAccount')}{' '}
+                <Link to={`/register?email=${encodeURIComponent(email)}`} className="font-semibold underline underline-offset-2">
+                  {t('auth.register')}
+                </Link>
+              </p>
+            </div>
+          )}
+          {errorType === 'credentials' && (
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2 rounded-md">
+              {t('auth.wrongCredentials')}
+            </div>
+          )}
+          {errorType === 'other' && (
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2 rounded-md">
+              {t('auth.wrongCredentials')}
+            </div>
           )}
 
           {/* Email field with dropdown */}

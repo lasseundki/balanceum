@@ -1,30 +1,34 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { FirebaseError } from 'firebase/app'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function RegisterPage() {
   const { t } = useTranslation()
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [emailInUse, setEmailInUse] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (password.length < 6) { setError(t('auth.passwordTooShort')); return }
     setError('')
+    setEmailInUse(false)
     setLoading(true)
     try {
       await register(email, password, name.trim())
       navigate('/')
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.includes('email-already-in-use')) {
-        setError(t('auth.emailInUse'))
+    } catch (err) {
+      if (err instanceof FirebaseError && err.code === 'auth/email-already-in-use') {
+        setEmailInUse(true)
       } else {
         setError(t('auth.registerFailed'))
       }
@@ -47,9 +51,26 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-xl p-6 shadow-md space-y-4">
           <h2 className="font-heading text-xl font-semibold text-text">{t('auth.registerTitle')}</h2>
 
+          {/* Generic error */}
           {error && (
-            <div className="bg-error-light text-error text-sm px-3 py-2 rounded-md">
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2 rounded-md">
               {error}
+            </div>
+          )}
+
+          {/* Email already in use — with login link */}
+          {emailInUse && (
+            <div className="bg-error-light border border-error/20 text-error text-sm px-3 py-2.5 rounded-md space-y-1">
+              <p>{t('auth.emailInUse')}</p>
+              <p>
+                {t('auth.hasAccount')}{' '}
+                <Link
+                  to={`/login?email=${encodeURIComponent(email)}`}
+                  className="font-semibold underline underline-offset-2"
+                >
+                  {t('auth.login')}
+                </Link>
+              </p>
             </div>
           )}
 
@@ -70,7 +91,7 @@ export default function RegisterPage() {
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => { setEmail(e.target.value); setEmailInUse(false) }}
               required
               placeholder="name@example.com"
               className="w-full border border-border rounded-md px-3 py-2.5 text-sm text-text bg-surface focus:outline-none focus:border-accent focus:ring-3 focus:ring-accent-light"
