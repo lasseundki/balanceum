@@ -27,7 +27,7 @@ export default function AddTransactionModal({ onClose, template }: Props) {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [categoryId, setCategoryId] = useState(template?.categoryId ?? '')
   const [paymentMethodId, setPaymentMethodId] = useState(template?.paymentMethodId ?? '')
-  const [memberId, setMemberId] = useState('')
+  const [memberIds, setMemberIds] = useState<string[]>([])
   const [note, setNote] = useState(template?.note ?? '')
   const [noteSuggestions, setNoteSuggestions] = useState<string[]>([])
   const [isGift, setIsGift] = useState(template?.isGift ?? false)
@@ -83,7 +83,7 @@ export default function AddTransactionModal({ onClose, template }: Props) {
       date: (() => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getTime() })(),
       categoryId,
       paymentMethodId: paymentMethodId || undefined,
-      memberId: memberId || undefined,
+      memberIds: memberIds.length > 0 ? memberIds : undefined,
       note: note.trim() || undefined,
       isGift,
       isExtraordinary,
@@ -254,9 +254,9 @@ export default function AddTransactionModal({ onClose, template }: Props) {
                 {members.map(m => (
                   <button
                     key={m.id}
-                    onClick={() => setMemberId(memberId === m.id ? '' : m.id)}
+                    onClick={() => setMemberIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      memberId === m.id ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+                      memberIds.includes(m.id) ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
                     }`}
                   >
                     {m.name}

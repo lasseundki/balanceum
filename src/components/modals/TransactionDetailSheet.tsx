@@ -36,7 +36,8 @@ export default function TransactionDetailSheet({ tx, onClose }: Props) {
 
   const cat = categories.find(c => c.id === tx.categoryId)
   const pm = paymentMethods.find(p => p.id === tx.paymentMethodId)
-  const member = members.find(m => m.id === tx.memberId)
+  const effectiveMemberIds = tx.memberIds ?? (tx.memberId ? [tx.memberId] : [])
+  const memberNames = members.filter(m => effectiveMemberIds.includes(m.id)).map(m => m.name).join(', ')
 
   async function handleDelete() {
     setDeletedTx(tx)
@@ -117,7 +118,7 @@ export default function TransactionDetailSheet({ tx, onClose }: Props) {
             <Row label={t('common.date')} value={fmtDateShort(tx.date)} />
             {tx.note ? <Row label={t('common.note')} value={tx.note} /> : null}
             {pm ? <Row label={t('transaction.paymentMethod')} value={pm.name} /> : null}
-            {member ? <Row label={t('transaction.forWhom')} value={member.name} /> : null}
+            {memberNames ? <Row label={t('transaction.forWhom')} value={memberNames} /> : null}
             {tx.currency && tx.currency !== baseCurrency && tx.exchangeRate ? (
               <Row label={t('currency.rateLabel')} value={`1 ${tx.currency} = ${tx.exchangeRate.toFixed(4)} ${baseCurrency}`} />
             ) : null}

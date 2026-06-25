@@ -36,7 +36,7 @@ export default function EditTransactionModal({ tx, onClose }: Props) {
   const [date, setDate] = useState(format(new Date(tx.date), 'yyyy-MM-dd'))
   const [categoryId, setCategoryId] = useState(tx.categoryId)
   const [paymentMethodId, setPaymentMethodId] = useState(tx.paymentMethodId ?? '')
-  const [memberId, setMemberId] = useState(tx.memberId ?? '')
+  const [memberIds, setMemberIds] = useState<string[]>(tx.memberIds ?? (tx.memberId ? [tx.memberId] : []))
   const [note, setNote] = useState(tx.note ?? '')
   const [noteSuggestions, setNoteSuggestions] = useState<string[]>([])
   const [isGift, setIsGift] = useState(tx.isGift)
@@ -88,7 +88,8 @@ export default function EditTransactionModal({ tx, onClose }: Props) {
       date: (() => { const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d).getTime() })(),
       categoryId,
       paymentMethodId: paymentMethodId || deleteField(),
-      memberId: memberId || deleteField(),
+      memberIds: memberIds.length > 0 ? memberIds : deleteField(),
+      memberId: deleteField(),
       note: note.trim() || deleteField(),
       isGift,
       isExtraordinary,
@@ -254,9 +255,9 @@ export default function EditTransactionModal({ tx, onClose }: Props) {
                 {members.map(m => (
                   <button
                     key={m.id}
-                    onClick={() => setMemberId(memberId === m.id ? '' : m.id)}
+                    onClick={() => setMemberIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      memberId === m.id ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
+                      memberIds.includes(m.id) ? 'bg-accent text-text-inverse border-accent' : 'border-border text-text-secondary hover:bg-bg-subtle'
                     }`}
                   >
                     {m.name}

@@ -229,7 +229,8 @@ export default function Transactions() {
       ) : (
         <div className="space-y-4">
           {grouped.map(([dateKey, txs]) => {
-            const d = new Date(dateKey)
+            const [yr, mo, dy] = dateKey.split('-').map(Number)
+            const d = new Date(yr, mo - 1, dy)
             const dayLabel = format(d, 'EEEE, d MMMM', { locale: dateLocale })
             const dayTotal = txs.reduce((s, tx) => s + (tx.type === 'income' ? effectiveAmount(tx) : -effectiveAmount(tx)), 0)
             return (

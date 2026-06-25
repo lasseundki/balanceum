@@ -47,6 +47,7 @@ export interface Transaction {
   categoryId: string
   paymentMethodId?: string
   memberId?: string
+  memberIds?: string[]
   note?: string
   isGift: boolean
   isExtraordinary: boolean
