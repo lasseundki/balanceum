@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useScrollLock } from '../../hooks/useScrollLock'
 import { X, Star, Zap, ChevronDown, AlertCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { deleteField } from 'firebase/firestore'
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export default function EditTransactionModal({ tx, onClose }: Props) {
+  useScrollLock()
   const { t } = useTranslation()
   const { baseCurrency } = useCurrency()
   const categories = useCategories()
@@ -59,7 +61,8 @@ export default function EditTransactionModal({ tx, onClose }: Props) {
 
   useEffect(() => {
     if (!isForeign) { setExchangeRate(1); setRateError(false); return }
-    if (currency === tx.currency && tx.exchangeRate) {
+    const txDate = format(new Date(tx.date), 'yyyy-MM-dd')
+    if (currency === tx.currency && tx.exchangeRate && date === txDate) {
       setExchangeRate(tx.exchangeRate)
       return
     }
@@ -67,10 +70,11 @@ export default function EditTransactionModal({ tx, onClose }: Props) {
     setRateError(false)
     rateAbort.current?.abort()
     rateAbort.current = new AbortController()
-    fetchExchangeRate(currency, baseCurrency)
+    const isToday = date === format(new Date(), 'yyyy-MM-dd')
+    fetchExchangeRate(currency, baseCurrency, isToday ? undefined : date)
       .then(rate => { setExchangeRate(rate); setRateLoading(false) })
       .catch(() => { setRateError(true); setRateLoading(false) })
-  }, [currency, baseCurrency, isForeign, tx.currency, tx.exchangeRate])
+  }, [currency, baseCurrency, isForeign, date, tx.currency, tx.exchangeRate, tx.date])
 
   const filteredCats = categories.filter(c => c.type === type || c.type === 'both')
 

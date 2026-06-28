@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useScrollLock } from '../../hooks/useScrollLock'
 import { X, Star, Zap, ChevronDown, AlertCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function AddTransactionModal({ onClose, template }: Props) {
+  useScrollLock()
   const { t } = useTranslation()
   const { baseCurrency } = useCurrency()
   const categories = useCategories()
@@ -62,10 +64,11 @@ export default function AddTransactionModal({ onClose, template }: Props) {
     setRateError(false)
     rateAbort.current?.abort()
     rateAbort.current = new AbortController()
-    fetchExchangeRate(currency, baseCurrency)
+    const isToday = date === format(new Date(), 'yyyy-MM-dd')
+    fetchExchangeRate(currency, baseCurrency, isToday ? undefined : date)
       .then(rate => { setExchangeRate(rate); setRateLoading(false) })
       .catch(() => { setRateError(true); setRateLoading(false) })
-  }, [currency, baseCurrency, isForeign])
+  }, [currency, baseCurrency, isForeign, date])
 
   const filteredCats = categories.filter(c => c.type === type || c.type === 'both')
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useScrollLock } from '../../hooks/useScrollLock'
 import { X, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTransactionActions, useCategories, usePaymentMethods, useMembers } from '../../hooks/useFirestore'
@@ -23,6 +24,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function TransactionDetailSheet({ tx, onClose }: Props) {
+  useScrollLock()
   const { t } = useTranslation()
   const { baseCurrency } = useCurrency()
   const categories = useCategories()

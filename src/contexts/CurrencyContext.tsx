@@ -33,6 +33,10 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         setBaseCurrencyState(currency)
         syncBaseCurrency(currency)
         localStorage.setItem('balanceum_currency', currency)
+      } else {
+        // Bootstrap: user set currency before Firestore sync was deployed
+        const local = localStorage.getItem('balanceum_currency')
+        if (local) setDoc(prefsRef, { baseCurrency: local }, { merge: true }).catch(() => {})
       }
       const notes = data?.noteHistory as string[] | undefined
       if (notes?.length) mergeRemoteNotes(notes)

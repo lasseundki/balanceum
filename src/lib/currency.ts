@@ -49,9 +49,10 @@ export function getCurrencyInfo(code: string): CurrencyInfo {
   return CURRENCIES.find(c => c.code === code) ?? { code, name: code, symbol: code, flag: '🏳️' }
 }
 
-export async function fetchExchangeRate(from: string, to: string): Promise<number> {
+export async function fetchExchangeRate(from: string, to: string, date?: string): Promise<number> {
   if (from === to) return 1
-  const res = await fetch(`https://api.frankfurter.app/latest?from=${from}&to=${to}`)
+  const endpoint = date ?? 'latest'
+  const res = await fetch(`https://api.frankfurter.app/${endpoint}?from=${from}&to=${to}`)
   if (!res.ok) throw new Error('rate_fetch_failed')
   const data = await res.json() as { rates: Record<string, number> }
   if (!data.rates[to]) throw new Error('rate_not_found')
