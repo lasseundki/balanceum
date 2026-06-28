@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { useAuth } from './AuthContext'
 import { syncBaseCurrency } from '../lib/currencyStore'
+import { setNoteSyncUid, mergeRemoteNotes } from '../lib/noteHistory'
 
 interface CurrencyContextType {
   baseCurrency: string
@@ -17,17 +18,24 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     () => localStorage.getItem('balanceum_currency') ?? 'EUR'
   )
 
-  // On login: load from Firestore and override localStorage if a synced value exists
+  // On login: sync uid for note history, load prefs from Firestore
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      setNoteSyncUid(null)
+      return
+    }
+    setNoteSyncUid(user.uid)
     const prefsRef = doc(db, 'users', user.uid, 'settings', 'prefs')
     getDoc(prefsRef).then(snap => {
-      const currency = snap.data()?.baseCurrency as string | undefined
+      const data = snap.data()
+      const currency = data?.baseCurrency as string | undefined
       if (currency) {
         setBaseCurrencyState(currency)
         syncBaseCurrency(currency)
         localStorage.setItem('balanceum_currency', currency)
       }
+      const notes = data?.noteHistory as string[] | undefined
+      if (notes?.length) mergeRemoteNotes(notes)
     })
   }, [user?.uid])
 

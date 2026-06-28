@@ -32,6 +32,13 @@ export function fmtShort(amount: number): string {
   return fmt(amount)
 }
 
+export function fmtCompact(amount: number): string {
+  if (Math.abs(amount) >= 1_000_000) {
+    return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency: getBaseCurrency(), notation: 'compact', maximumFractionDigits: 1 }).format(amount)
+  }
+  return fmtShort(amount)
+}
+
 export function fmtCurrency(amount: number, currency: string): string {
   return new Intl.NumberFormat(intlLocale(), { style: 'currency', currency }).format(amount)
 }

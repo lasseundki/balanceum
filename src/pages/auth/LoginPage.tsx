@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [email, setEmail] = useState(searchParams.get('email') ?? '')
+  const [email, setEmail] = useState(searchParams.get('email') ?? getEmailHistory()[0] ?? '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)

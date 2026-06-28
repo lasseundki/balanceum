@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useMonthTransactions, useCategories, useTemplates, useBudgets } from '../hooks/useFirestore'
-import { fmt, fmtShort, fmtMonthYear, fmtDateShort, fmtCurrency } from '../lib/formatters'
+import { fmt, fmtShort, fmtCompact, fmtMonthYear, fmtDateShort, fmtCurrency } from '../lib/formatters'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
@@ -96,23 +96,25 @@ export default function Dashboard() {
         </div>
 
         <p className="text-xs opacity-75 uppercase tracking-wider mb-1">{t('common.balance')}</p>
-        <p className={`font-heading text-4xl font-bold ${balance < 0 ? 'text-error-light' : ''}`}>
-          {loading ? '...' : fmt(balance)}
-        </p>
+        {(() => {
+          const balStr = loading ? '...' : fmtShort(balance)
+          const sz = balStr.length > 14 ? 'text-2xl' : balStr.length > 10 ? 'text-3xl' : 'text-4xl'
+          return <p className={`font-heading ${sz} font-bold ${balance < 0 ? 'text-error-light' : ''}`}>{balStr}</p>
+        })()}
 
         <div className="flex gap-4 mt-4 pt-4 border-t border-white/20">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="opacity-80" />
             <div>
               <p className="text-xs opacity-70">{t('common.income')}</p>
-              <p className="text-sm font-semibold">{fmtShort(income)}</p>
+              <p className="text-sm font-semibold">{fmtCompact(income)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <TrendingDown size={16} className="opacity-80" />
             <div>
               <p className="text-xs opacity-70">{t('common.expense')}</p>
-              <p className="text-sm font-semibold">{fmtShort(expense)}</p>
+              <p className="text-sm font-semibold">{fmtCompact(expense)}</p>
             </div>
           </div>
         </div>
@@ -210,7 +212,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-text-muted">{pct.toFixed(0)}%</span>
-                        <span className="text-sm font-semibold text-text">{fmt(total)}</span>
+                        <span className="text-sm font-semibold text-text">{fmtCompact(total)}</span>
                       </div>
                     </div>
                     <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
@@ -233,9 +235,9 @@ export default function Dashboard() {
                       <span className="text-sm font-medium text-text">{cat?.name ?? '?'}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-semibold text-text">{fmt(total)}</span>
+                      <span className="text-sm font-semibold text-text">{fmtCompact(total)}</span>
                       {budget ? (
-                        <span className="text-xs text-text-muted ml-1">/ {fmt(budget)}</span>
+                        <span className="text-xs text-text-muted ml-1">/ {fmtCompact(budget)}</span>
                       ) : (
                         <span className="text-xs text-text-muted ml-1">—</span>
                       )}

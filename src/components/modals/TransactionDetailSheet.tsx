@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useTransactionActions, useCategories, usePaymentMethods, useMembers } from '../../hooks/useFirestore'
-import { fmt, fmtCurrency, fmtDateShort } from '../../lib/formatters'
+import { fmtShort, fmtCurrency, fmtDateShort } from '../../lib/formatters'
 import { effectiveAmount } from '../../lib/currency'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import EditTransactionModal from './EditTransactionModal'
@@ -103,9 +103,15 @@ export default function TransactionDetailSheet({ tx, onClose }: Props) {
               {cat?.icon ?? '📌'}
             </div>
             <div>
-              <p className={`font-heading text-3xl font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
-                {tx.type === 'income' ? '+' : '−'}{fmt(effectiveAmount(tx))}
-              </p>
+              {(() => {
+                const amtStr = fmtShort(effectiveAmount(tx))
+                const sz = amtStr.length > 14 ? 'text-xl' : amtStr.length > 10 ? 'text-2xl' : 'text-3xl'
+                return (
+                  <p className={`font-heading ${sz} font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>
+                    {tx.type === 'income' ? '+' : '−'}{amtStr}
+                  </p>
+                )
+              })()}
               {tx.currency && tx.currency !== baseCurrency && (
                 <p className="text-sm text-text-muted">{fmtCurrency(tx.amount, tx.currency)}</p>
               )}
