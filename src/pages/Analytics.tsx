@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { format } from 'date-fns'
 import { de, enUS, es, ptBR } from 'date-fns/locale'
 import { useYearTransactions, useCategories } from '../hooks/useFirestore'
-import { fmt, fmtShort, fmtCurrency, fmtDateShort } from '../lib/formatters'
+import { fmt, fmtCompact, fmtCurrency, fmtDateShort } from '../lib/formatters'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { effectiveAmount, getCurrencyInfo } from '../lib/currency'
 
@@ -305,9 +305,9 @@ export default function Analytics() {
               { label: t('common.expense'), val: totalExpense, color: 'text-error' },
               { label: t('common.balance'), val: totalIncome - totalExpense, color: totalIncome - totalExpense >= 0 ? 'text-success' : 'text-error' },
             ].map(({ label, val, color }) => (
-              <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center">
-                <p className="text-xs text-text-muted mb-0.5">{label}</p>
-                <p className={`text-sm font-bold ${color}`}>{fmtShort(val)}</p>
+              <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center min-w-0">
+                <p className="text-xs text-text-muted mb-0.5 truncate">{label}</p>
+                <p className={`text-xs font-bold ${color} break-all leading-tight`}>{fmtCompact(val)}</p>
               </div>
             ))}
           </div>
@@ -468,9 +468,9 @@ export default function Analytics() {
                     { label: t('common.expense'), val: d.expense, color: 'text-error' },
                     { label: t('common.balance'), val: d.balance, color: d.balance >= 0 ? 'text-success' : 'text-error' },
                   ].map(({ label, val, color }) => (
-                    <div key={label} className="text-center">
-                      <p className="text-xs text-text-muted">{label}</p>
-                      <p className={`text-sm font-bold ${color}`}>{fmt(val)}</p>
+                    <div key={label} className="text-center min-w-0">
+                      <p className="text-xs text-text-muted truncate">{label}</p>
+                      <p className={`text-xs font-bold ${color} break-all leading-tight`}>{fmtCompact(val)}</p>
                     </div>
                   ))
                 })()}
@@ -547,9 +547,9 @@ export default function Analytics() {
               { label: t('common.expense'), val: viewExpense, color: 'text-error' },
               { label: t('common.balance'), val: viewIncome - viewExpense, color: viewIncome - viewExpense >= 0 ? 'text-success' : 'text-error' },
             ].map(({ label, val, color }) => (
-              <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center">
-                <p className="text-xs text-text-muted mb-0.5">{label}</p>
-                <p className={`text-sm font-bold ${color}`}>{fmtShort(val)}</p>
+              <div key={label} className="bg-surface border border-border rounded-lg p-3 text-center min-w-0">
+                <p className="text-xs text-text-muted mb-0.5 truncate">{label}</p>
+                <p className={`text-xs font-bold ${color} break-all leading-tight`}>{fmtCompact(val)}</p>
               </div>
             ))}
           </div>
